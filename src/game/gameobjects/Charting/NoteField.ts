@@ -41,7 +41,7 @@ export class ChartingNoteField {
 		}
 	}
 
-	handleKeyDown(event: KeyboardEvent): void {
+	processKeyDownEvent(event: KeyboardEvent): void {
 		if(event.ctrlKey) {
 			this.handleCtrlCommand(event);
 			return;
@@ -86,7 +86,7 @@ export class ChartingNoteField {
 		this.renderer.setBaseScrollSpeed(this.renderer.base_scroll_speed + delta);
 	}
 
-	handleKeyUp(event: KeyboardEvent): void {
+	processKeyUpEvent(event: KeyboardEvent): void {
 		this.logic.handleKeyUp(event);
 	}
 

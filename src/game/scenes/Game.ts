@@ -26,19 +26,17 @@ export class Game extends Scene
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x000000);
         const chart = Chart.fromJSON(chartjson, this);
+
         this.manager = new GameplayManager(this, chart, {x: 0, y: g.NOTE_FIELD_Y}, 'turkey');
+        this.manager.keyboard.registerHandlers(this);
         
-        this.input.keyboard?.on("keydown", this.manager.handleKeyDown, this.manager);
-        this.input.keyboard?.on("keyup", this.manager.handleKeyUp, this.manager);
-        
-        this.debug_text = this.add.text(10, 600, "");
+        this.debug_text = this.add.text(10, 600, "", g.NOTE_STYLE);
     }
 
     update (_time: number, _delta_ms: number)
     {
         this.manager.myUpdate();
         this.updateDebug();
-        console.log(this.game.loop.actualFps);
     }
 
     // Used to display values for debugging

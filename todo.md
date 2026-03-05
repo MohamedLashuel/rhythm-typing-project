@@ -1,8 +1,7 @@
 HIGH PRIORITY:
 - Fix note tearing
-- Decrease lag
-- Fix lag dropping keyboard inputs (if possible?)
-- Charting song/chart settings and display shortcuts
+- Charting song/chart settings and displaying shortcuts
+- BUG: Holds not appearing when chart loaded
 
 CODE TASKS:
 - Shrink chart JSONs
@@ -10,18 +9,20 @@ CODE TASKS:
 
 MISSING FEATURES:
 - Gameplay:
--- Song select
--- Gameplay settings
+	- Song select
+	- Gameplay settings
 
 - Charting:
--- Load song from file
--- Download chart file
--- Change playback rate
--- Move receptor
--- BPM/scroll changes
+	- Load song from file
+	- Download chart file
+	- Change playback rate
+	- Move receptor
+	- BPM/scroll changes
 
 NICE TO HAVE:
+- Decrease lag
 - Rolls
+- Autoplay
 - Arrowvortex timing algorithm
 - Beat lines
 - Pause gimmicks

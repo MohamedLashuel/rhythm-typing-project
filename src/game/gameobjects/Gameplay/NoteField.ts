@@ -4,12 +4,14 @@ import * as c from '../../config'
 import { Note } from '../Note';
 import { Chart } from "../Song"
 import { Entity, NoteFieldRenderer } from '../NoteFieldRenderer';
+import { KeyboardManager } from '../KeyboardManager';
 
 export class GameplayNoteField {
 	logic: GameplayLogic;
 	renderer: GameplayRenderer;
+	keyboard: KeyboardManager;
 
-	constructor(scene: Scene, chart: Chart, pt: u.t.Point) {
+	constructor(scene: Scene, chart: Chart, keyboard: KeyboardManager, pt: u.t.Point) {
 		const notes = chart.notesArray();
 
 		this.logic = new GameplayLogic(notes);
@@ -19,15 +21,16 @@ export class GameplayNoteField {
 			{ event: "NOTE_HIT", fun: this.renderer.onNoteHit, context: this.renderer }
 		);
 		scene.add.existing(this.renderer);
+
+		this.keyboard = keyboard;
 	}
 
 	myUpdate(time: number) {
-		this.logic.myUpdate(time);
 		this.renderer.scrollToTime(time);
+		this.logic.myUpdate(time);
+		this.keyboard.handleQueues(evt => this.logic.processKeyDownEvent(evt),
+			evt => this.logic.processKeyUpEvent(evt));
 	}
-
-	handleKeyDown(event: KeyboardEvent) { this.logic.handleKeyDown(event); }
-	handleKeyUp(event: KeyboardEvent) { this.logic.handleKeyUp(event); }
 }
 
 // Handles hitting notes and underlying gameplay logic
@@ -45,14 +48,14 @@ class GameplayLogic {
 		this.notes = notes;
 	}
 
-	handleKeyDown(event: KeyboardEvent): void {
+	processKeyDownEvent(event: KeyboardEvent): void {
 		const key = event.key;
 		if(!u.isChar(key)) return;
 		const result = this.hittableNotes().find(n => n.canHitChar(key));
 		if(result !== undefined) this.hitNote(result, key);
 	}
 
-	handleKeyUp(event: KeyboardEvent): void {
+	processKeyUpEvent(event: KeyboardEvent): void {
 		const key = event.key;
 		if(!u.isChar(key) || this.held_note === undefined) return;
 		if(this.held_note.chars.includes(key) && 
@@ -62,14 +65,11 @@ class GameplayLogic {
 		}
 	}
 
-	isNoteHittable(note: Note, time: number){
-		const tooLate = note.timing.time < time - c.HIT_BUFFER;
-		const tooEarly = note.timing.time > time + c.HIT_BUFFER;
-		return !tooLate && !tooEarly
-	}
-
 	hittableNotes(): Note[] {
-		return u.takeWhile(this.notes_past_index, n => this.isNoteHittable(n, this.playback_time) );
+		return u.takeFromWhile(this.notes_past_index, 
+			n => n.timing.time > this.playback_time - c.HIT_BUFFER,
+			n => n.timing.time < this.playback_time + c.HIT_BUFFER
+		);
 	}
 
 	get notes_past_index(): Note[] {
@@ -120,8 +120,8 @@ class GameplayLogic {
 		const time_diff = Math.abs(cur_time - note.timing.time);
 		const judgment = c.JUDGMENTS.find(j => time_diff < (j.window ?? -1) );
 		u.shouldntBeUndefined(judgment, "While judging a hit, the hit was found to be a miss");
-		this.emitter.emit("JUDGMENT_MADE", [judgment]);
-		this.scoreJudgment(judgment);
+		this.emitter.emit("JUDGMENT_MADE", [judgment ?? c.MISS_JUDGMENT]);
+		this.scoreJudgment(judgment ?? c.MISS_JUDGMENT);
 	}
 
 	scoreJudgment(judgment: u.t.Judgment){

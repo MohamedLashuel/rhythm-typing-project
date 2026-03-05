@@ -5,8 +5,8 @@ import * as t from './types'
 export const MISS_JUDGMENT: t.Judgment = { window: undefined, name: "MISS", points: -10}
 export const JUDGMENTS: t.Judgment[] = [
 	{ window: 100 / 1000, name: "EXCELLENT", points: 100 },
-	{ window: 200 / 1000, name: "GREAT", points: 80 },
-	{ window: 500 / 1000, name: "OK", points: 50},
+	{ window: 400 / 1000, name: "GREAT", points: 80 },
+	{ window: 1000 / 1000, name: "OK", points: 50},
 	MISS_JUDGMENT
 ]
 const window_sizes = JUDGMENTS.map(j => j.window ?? 0)

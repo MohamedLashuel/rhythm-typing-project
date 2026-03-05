@@ -11,10 +11,17 @@ export function without<T>(ary: T[], els: T[]): T[] {
 }
 
 // Take elements from an array while a predicate function returns true
-export function takeWhile<T>(ary: T[], pred: (t: T) => boolean): T[]{
+export function takeWhile<T>(ary: T[], pred: (t: T) => boolean): T[] {
 	const end_index = ary.findIndex(t => !pred(t));
 	if(end_index === -1) return ary;
 	return ary.slice(0, end_index);
+}
+
+// Take elements from an array starting from where the first function returns true while the second is true
+export function takeFromWhile<T>(ary: T[], f1: (t: T) => boolean, f2: (t: T) => boolean): T[] {
+	const start_ind = ary.findIndex(t => f1(t));
+	if(start_ind === -1) return [];
+	return takeWhile(ary.slice(start_ind), f2);
 }
 
 // Increase an array index until pred returns false

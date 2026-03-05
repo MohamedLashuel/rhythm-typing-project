@@ -1,6 +1,7 @@
 import { GameplayNoteField } from "./NoteField";
 import { ScoreRenderer } from "./ScoreRenderer";
 import { SoundManager } from "../Sound";
+import { KeyboardManager } from "../KeyboardManager"
 import * as u from '../../utils';
 import { Chart } from "../Song";
 import { Scene } from "phaser";
@@ -9,9 +10,11 @@ export class GameplayManager {
 	note_field: GameplayNoteField;
 	sound: SoundManager;
 	scorer: ScoreRenderer;
+	keyboard: KeyboardManager;
 
 	constructor(scene: Scene, chart: Chart, field_loc: u.t.Point, song_key: string){
-		this.note_field = new GameplayNoteField(scene, chart, field_loc);
+		this.keyboard = new KeyboardManager();
+		this.note_field = new GameplayNoteField(scene, chart, this.keyboard, field_loc);
 		this.sound = new SoundManager(scene, song_key);
 		this.scorer = new ScoreRenderer(scene);
 
@@ -23,9 +26,6 @@ export class GameplayManager {
 
        	this.sound.startPlayback(chart.offset);
 	}
-
-	handleKeyDown(event: KeyboardEvent){ this.note_field.handleKeyDown(event); }
-	handleKeyUp(event: KeyboardEvent){ this.note_field.handleKeyUp(event); }
 
 	myUpdate(){ this.note_field.myUpdate(this.sound.song_playback_time); }
 }

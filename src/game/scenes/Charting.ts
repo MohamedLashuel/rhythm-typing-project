@@ -30,10 +30,9 @@ export class Charting extends Scene
         this.camera.setBackgroundColor(0x000000);
         
         this.manager = new ChartingManager(this, {x: 0, y: g.NOTE_FIELD_Y}, 'turkey', Chart.fromJSON(chartjson, this));
+        this.manager.keyboard.registerHandlers(this);
+        // This isn't needed for the game scene, but it is needed here. No clue why.
         this.add.existing(this.manager.note_field.renderer);
-
-        this.input.keyboard?.on("keydown", this.manager.handleKeyDown, this.manager);
-        this.input.keyboard?.on("keyup", this.manager.handleKeyUp, this.manager);
 
         this.debug_text = this.add.text(10, 600, "");
         
