@@ -1,16 +1,14 @@
-HIGH PRIORITY:
-- Fix note tearing
-- Charting song/chart settings and displaying shortcuts
-- BUG: Holds not appearing when chart loaded
-
-CODE TASKS:
-- Shrink chart JSONs
+FOR NEXT RELEASE:
+- Charting screens: Chart properties, song properties, display controls
 - Create Song type to contain charts
+- Song select
+- Gameplay settings (scroll speed)
+- BUG: Holds not appearing when chart loaded
+- Charting: Set song audio via filepath
 
 MISSING FEATURES:
 - Gameplay:
-	- Song select
-	- Gameplay settings
+	- Visualize bpm changes/scroll changes
 
 - Charting:
 	- Load song from file
@@ -18,6 +16,9 @@ MISSING FEATURES:
 	- Change playback rate
 	- Move receptor
 	- BPM/scroll changes
+
+- Coding:
+	- Shrink chart JSONs
 
 NICE TO HAVE:
 - Decrease lag
@@ -27,3 +28,6 @@ NICE TO HAVE:
 - Beat lines
 - Pause gimmicks
 - Visual gimmicks which move note field (e.g. beat from ITG)
+- Two modes of charting playback: Snap back to start OR keep position
+- Group select in charting
+- Undo/redo in charting
