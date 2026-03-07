@@ -4,7 +4,7 @@ import * as c from '../../config'
 import * as g from '../../graphics'
 import { Note } from '../Note';
 import { Beat } from '../Beat';
-import { EntityMap, Chart, EntityMapEntry } from "../Song"
+import { EntityMap, Chart, EntityMapEntry, Song } from "../Song"
 import { Entity, NoteFieldRenderer } from '../NoteFieldRenderer';
 
 type Cursor = { position: Beat, increment: c.ValidDivision }
@@ -13,19 +13,20 @@ const DEFAULT_CURSOR: Readonly<Cursor> = { position: Beat.ZERO_BEAT(), increment
 export class ChartingNoteField {
 	logic: ChartingLogic;
 	renderer: ChartingRenderer;
-	chart: Chart;
+	song: Song;
+	current_chart: Chart;
 	cursor: Cursor = DEFAULT_CURSOR;
 	playback_time: number = 0;
 	currently_playing: boolean = false;
 	emitter: u.t.MyEmitter = new u.t.MyEmitter();
 	held?: { beat: Beat, note: Note }
 
-	// Can start from scratch with no chart, or continue editing an existing chart
-	constructor(scene: Scene, pt: u.t.Point, initial_chart: Chart){
-		this.chart = initial_chart;
+	constructor(scene: Scene, pt: u.t.Point, song: Song, initial_chart: Chart){
+		this.song = song;
+		this.current_chart = initial_chart;
 
-		this.logic = new ChartingLogic(scene, this.chart, this.chart.entities);
-		this.renderer = new ChartingRenderer(scene, this.chart, this.chart.entities, pt)
+		this.logic = new ChartingLogic(scene, this.current_chart);
+		this.renderer = new ChartingRenderer(scene, this.current_chart, this.current_chart.entities, pt)
 
 		this.logic.emitter.addListeners(
 			{event: "NOTE_CREATED" ,fun: this.renderer.onNoteCreated, context: this.renderer},
@@ -78,8 +79,7 @@ export class ChartingNoteField {
 	}
 
 	saveChart(): void {
-		this.chart.entities = this.logic.entities;
-		console.log(JSON.stringify(this.chart));
+		console.log(JSON.stringify(this.song));
 	}
 
 	changeScrollSpeed(delta: number): void {
@@ -91,7 +91,7 @@ export class ChartingNoteField {
 	}
 
 	moveCursorTo(new_pos: Beat): void {
-		this.playback_time = this.chart.calculateHitTime(new_pos);
+		this.playback_time = this.current_chart.calculateHitTime(new_pos);
 		this.renderer.scrollToTime(this.playback_time);
 		this.updateCursorPosition(new_pos);
 	}
@@ -126,7 +126,7 @@ export class ChartingNoteField {
 
 	startOrStopPlayback(): void {
 		if(!this.currently_playing){
-			this.emitter.emit("PLAYBACK_START", [this.playback_time + this.chart.offset]);
+			this.emitter.emit("PLAYBACK_START", [this.playback_time + this.current_chart.offset]);
 		} else {
 			this.emitter.emit("PLAYBACK_STOP", []);
 			this.resetPlaybackTime();
@@ -136,7 +136,7 @@ export class ChartingNoteField {
 
 	// When stopping playback, move playback time back to the cursor
 	resetPlaybackTime(): void {
-		const new_time = this.chart.calculateHitTime(this.cursor.position);
+		const new_time = this.current_chart.calculateHitTime(this.cursor.position);
 		this.playback_time = new_time;
 		this.renderer.scrollToTime(new_time);
 	}
@@ -149,16 +149,15 @@ class ChartingLogic {
 
 	constructor(
 		public scene: Scene, 
-		public chart: Chart, 
-		public entities: EntityMap){}
+		public chart: Chart){}
 
 	placeOrRemoveChar(char: u.t.Character){
-		const existing_note = this.entities.get(this.cursor.position);
+		const existing_note = this.chart.entities.get(this.cursor.position);
 		const new_chars = (existing_note === undefined) ? [char] 
 			: u.toggleInclusion(existing_note.chars, char)
 
 		if(new_chars.length === 0){
-			this.entities.delete(this.cursor.position);
+			this.chart.entities.delete(this.cursor.position);
 		} else {
 			const new_note = this.chart.createNote(new_chars, this.cursor.position, undefined, this.scene);
 			this.emitter.emit("NOTE_CREATED", [new_note, this.cursor.position]);
@@ -168,9 +167,9 @@ class ChartingLogic {
 	}
 
 	deleteNoteAt(beat: Beat){
-		const existing_note = this.entities.get(beat);
+		const existing_note = this.chart.entities.get(beat);
 		if(existing_note !== undefined){
-			this.entities.delete(beat);
+			this.chart.entities.delete(beat);
 			this.emitter.emit("NOTE_DELETED", [existing_note]);
 		}
 	}

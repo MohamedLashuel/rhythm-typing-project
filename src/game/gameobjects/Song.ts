@@ -6,6 +6,32 @@ import { Entity } from './NoteFieldRenderer';
 import * as u from '../utils';
 import * as c from '../config';
 
+export class Song {
+	constructor(
+		public song_name: string = "",
+		public audio_path: string = "",
+		public audio_credit: string = "",
+		// Song objects are always guaranteed to have at least one chart
+		public charts: [Chart, ...Chart[]] = [new Chart()]
+	) {}
+
+	toJSON(): u.t.JSONfied<Song> {
+		return {
+			song_name: this.song_name,
+			audio_path: this.audio_path,
+			audio_credit: this.audio_credit,
+			charts: this.charts.map(ch => ch.toJSON())
+		};
+	}
+
+	static fromJSON(str: string, scene: Scene): Song {
+		const obj = JSON.parse(str);
+
+		return new Song(obj.song_name, obj.audio_path, obj.audio_credit, 
+			obj.charts.map( (o: Object) => Chart.fromJSON(JSON.stringify(o), scene)));
+	}
+}
+
 export type ScrollChange = {
 	mult: number;
 	total_distance: number;
@@ -90,28 +116,27 @@ export class Chart {
 		return this.entities.valuesArray().flat();
 	}
 
-	toJSON(): Object {
+	toJSON(): u.t.JSONfied<Chart> {
 		return {
 			author: this.author,
 			scroll_changes: this.scroll_changes.toArray(),
 			bpms: this.bpms.toArray(),
-			entities: this.entityMapToJSON(),
+			entities: this.entities.valuesArray().map(n => n.toSpec()),
 			offset: this.offset,
 			initial_bpm: this.initial_bpm
 		}
 	}
 
-	entityMapToJSON(): Object {
-		return this.entities.valuesArray().flat().map( n => n.toSpec() )
-	}
-
 	static fromJSON(str: string, scene: Scene): Chart {
 		const obj = JSON.parse(str, Chart.jsonReviver);
-
-		const chart = new Chart(obj.author, obj.scroll_changes, obj.bpms, 
-			new BTree(undefined, Beat.compare), obj.offset, obj.initial_bpm);
 		
-		obj.entities.map( (ns: NoteSpec) => chart.createNote(ns.chars, ns.beat, ns.hold_beat, scene));
+		const chart = new Chart(obj.author, obj.scroll_changes, obj.bpms, 
+		new BTree(undefined, Beat.compare), obj.offset, obj.initial_bpm);
+		
+		// TODO: Input validation to make sure we got characters and not any string
+		obj.entities.map( (ns: NoteSpec) => chart.createNote(ns.chars as u.t.Character[], 
+			Beat.fromJSON(ns.beat), ns.hold_beat === undefined ? undefined : Beat.fromJSON(ns.hold_beat), 
+			scene));
 
 		return chart;
 	}
@@ -121,15 +146,6 @@ export class Chart {
 			return new BTree(v);
 		} else if (k === "bpms"){
 			return new BTree(v.map( ([b, n]: [any, any]) => [Beat.fromJSON(b), n]));
-		} else if (k === "entities"){
-			// TODO: Input validation to make sure we got characters and not any string
-			return v.map((n: any) => {
-				return {
-					chars: n.chars as u.t.Character[] ,
-				 	beat: Beat.fromJSON(n.beat) ,
-				  	hold_beat: n.hold_beat === undefined ? undefined : Beat.fromJSON(n.hold_beat)
-				}
-			});
 		} else {
 			return v;
 		}

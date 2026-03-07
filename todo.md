@@ -1,10 +1,12 @@
 FOR NEXT RELEASE:
-- Charting screens: Chart properties, song properties, display controls
+- Charting screens: Chart properties, song properties, display controls, chart list
 - Create Song type to contain charts
 - Song select
 - Gameplay settings (scroll speed)
 - BUG: Holds not appearing when chart loaded
+- BUG: When renderer initializes before it is ever scrolled, notes don't appear
 - Charting: Set song audio via filepath
+- Determine song to be played by song audio path and not hardcoding
 
 MISSING FEATURES:
 - Gameplay:
@@ -16,9 +18,6 @@ MISSING FEATURES:
 	- Change playback rate
 	- Move receptor
 	- BPM/scroll changes
-
-- Coding:
-	- Shrink chart JSONs
 
 NICE TO HAVE:
 - Decrease lag

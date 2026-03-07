@@ -6,6 +6,25 @@ export type Character = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j
 "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" |
 "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
 
+export type Point = {
+	x: number,
+	y: number
+}
+
+export type Range<T> = {
+	start: T,
+	end: T
+}
+
+// Specifically excludes class properties which are functions, only includes real methods
+type ClassMethod = (...args: any[]) => any;
+
+export type ClassProperties<C> = keyof {
+    [K in keyof C as C[K] extends ClassMethod ? never : K]: any
+}
+
+export type JSONfied<C> = Record<ClassProperties<C>, any>
+
 // An undefined window means one you can't hit normally
 export type Judgment = {window: number | undefined, name: string, points: number}
 
@@ -21,16 +40,6 @@ export type EventTable = {
 	NOTE_DELETED: [Note],
 	PLAYBACK_START: [number],
 	PLAYBACK_STOP: []
-}
-
-export type Point = {
-	x: number,
-	y: number
-}
-
-export type Range<T> = {
-	start: T,
-	end: T
 }
 
 export type Event = keyof EventTable

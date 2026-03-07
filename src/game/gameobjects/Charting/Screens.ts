@@ -1,5 +1,5 @@
 import { GameObjects, Scene } from "phaser"
-import { Chart } from "../Song";
+import { Chart, Song } from "../Song";
 import * as g from '../../graphics';
 import * as u from '../../utils';
 import TextAreaInput from "phaser3-rex-plugins/templates/ui/textareainput/TextAreaInput";
@@ -9,9 +9,10 @@ type ScreenType = "chart_props" | "song_props" | "help"
 export class ScreenManager {
 	screens: Record<ScreenType, Screen>;
 	active_screen?: ScreenType = undefined;
+	song: Song;
 	chart: Chart;
 
-	constructor(scene: Scene, chart: Chart) {
+	constructor(scene: Scene, song: Song, initial_chart: Chart) {
 		this.screens = {
 			chart_props: new ChartProps(scene),
 			song_props: new ChartProps(scene),
@@ -19,19 +20,20 @@ export class ScreenManager {
 		};
 		Object.values(this.screens).forEach(s => scene.add.existing(s));
 
-		this.chart = chart;
+		this.song = song;
+		this.chart = initial_chart;
 	}
 
 	// Trying to activate a screen while a different one is active is OK
 	activateScreen(type: ScreenType): void {
 		if(this.active_screen !== undefined) this.deactivateActiveScreen();
-		this.screens[type].activate().prepopulate(this.chart);
+		this.screens[type].activate().prepopulate(this.song, this.chart);
 		this.active_screen = type;
 	}
 
 	deactivateActiveScreen(): void {
 		u.shouldntBeUndefined(this.active_screen, "Tried to deactivate active screen when there was none");
-		this.screens[this.active_screen].deactivate().saveToChart(this.chart);
+		this.screens[this.active_screen].deactivate().saveChanges(this.song, this.chart);
 		this.active_screen = undefined;
 	}
 
@@ -54,9 +56,9 @@ abstract class Screen extends GameObjects.Container {
 		this.setDepth(10).deactivate();
 	}
 
-	abstract prepopulate(chart: Chart): void
-
-	abstract saveToChart(chart: Chart): void
+	// Some screens use the song, some use the chart, some use neither, so just pass in both
+	abstract prepopulate(song: Song, chart: Chart): void
+	abstract saveChanges(song: Song, chart: Chart): void
 
 	activate(): this {
 		return this.setActive(true).setVisible(true);
@@ -95,12 +97,12 @@ class ChartProps extends Screen {
 		]);
 	}
 
-	override prepopulate(chart: Chart): void {
+	override prepopulate(_song: Song, chart: Chart): void {
 		this.offset_input.setText(chart.offset.toString());
 		this.bpm_input.setText(chart.initial_bpm.toString());
 	}
 
-	override saveToChart(chart: Chart): void {
+	override saveChanges(_song: Song, chart: Chart): void {
 		chart.offset = Number(this.offset_input.text)
 		chart.initial_bpm = Number(this.bpm_input.text)
 	}

@@ -55,12 +55,13 @@ export class Beat {
 
 	static beatsToSeconds = (beats: number, bpm: number) => beats / bpm * 60
 
-	toString(): string {
-		return JSON.stringify(this)
+	toJSON(): string {
+		return `${this.measure}/${this.index}/${this.division}`;
 	}
 
-	// When a beat is serialized to JSON, it keeps its properties but loses its class
-	static fromJSON(obj: any): Beat {
-		return new Beat(obj.measure, obj.index, obj.division);
+	static fromJSON(str: string): Beat {
+		console.log(str)
+		const result = str.split("/") as [string, string, string];
+		return new Beat(Number(result[0]), Number(result[1]), Number(result[2]) as c.ValidDivision);
 	}
 }

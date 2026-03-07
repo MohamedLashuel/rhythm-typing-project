@@ -111,17 +111,17 @@ export class Note extends GameObjects.Container {
 		return u.arraysHaveSameValues(this.chars, this.hit_chars);
 	}
 
-	toSpec(): NoteSpec {
+	toSpec() {
 		return {
 			chars: this.chars,
-			beat: this.timing.beat,
-			hold_beat: this.hold_timing?.beat
+			beat: this.timing.beat.toJSON(),
+			hold_beat: this.hold_timing?.beat.toJSON()
 		};
 	}
 }
 
 export type NoteSpec = {
-	chars: u.t.Character[],
-	beat: Beat,
-	hold_beat?: Beat
+	chars: string[],
+	beat: string,
+	hold_beat: string
 }
