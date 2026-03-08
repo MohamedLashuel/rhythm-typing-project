@@ -12,11 +12,11 @@ export class ChartingManager {
 	sound: SoundManager;
 	keyboard: KeyboardManager;
 
-	constructor(scene: Scene, field_loc: u.t.Point, song_key: string, initial_song?: Song){
+	constructor(scene: Scene, field_loc: u.t.Point, initial_song?: Song){
 		const song = initial_song ?? new Song();
 		const initial_chart = song.charts[0];
 		this.note_field = new ChartingNoteField(scene, field_loc, song, initial_chart);
-		this.sound = new SoundManager(scene, song_key);
+		this.sound = new SoundManager(scene);
 		this.screens = new ScreenManager(scene, song, initial_chart);
 		this.keyboard = new KeyboardManager();
 

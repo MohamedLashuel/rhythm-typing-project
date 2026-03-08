@@ -1,21 +1,13 @@
 import { Scene } from "phaser";
 import * as u from '../utils'
 
-const DEFAULT_TABLE = {
-	hit: "hit",
-}
-
-type SoundType = keyof typeof DEFAULT_TABLE
-type SoundTable = Record<SoundType, string>
-
+// Audio is preloaded in the scene itself with key "song"
 export class SoundManager {
 	song_instance: u.t.SoundInstance
 	constructor(
-		public scene: Scene, 
-		public song_key: string,
-		public table: SoundTable = DEFAULT_TABLE
+		public scene: Scene
 	){
-		this.song_instance = scene.sound.add(song_key);
+		this.song_instance = scene.sound.add("song");
 	}
 
 	// Wrapper for playing sounds
@@ -24,9 +16,9 @@ export class SoundManager {
 	}
 
 	// Returns a function that plays the specified sound when called
-	playSoundFactory(sound_type: SoundType): () => void {
+	playSoundFactory(key: string): () => void {
 		return () => {
-			this.play(this.table[sound_type]);
+			this.play(key);
 		}
 	}
 
@@ -38,9 +30,11 @@ export class SoundManager {
 	}
 
 	stopPlayback(): void {
-		this.scene.sound.stopByKey(this.song_key)
+		this.scene.sound.stopByKey("song");
 	}
 
+	// If playback time should be negative (because of negative offset), this returns 0
+	// Might be a problem later, but I can't find a better way
 	get song_playback_time(): number {
 		return this.song_instance.seek;
 	}

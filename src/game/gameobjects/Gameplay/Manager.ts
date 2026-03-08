@@ -12,10 +12,10 @@ export class GameplayManager {
 	scorer: ScoreRenderer;
 	keyboard: KeyboardManager;
 
-	constructor(scene: Scene, chart: Chart, field_loc: u.t.Point, song_key: string){
+	constructor(scene: Scene, chart: Chart, field_loc: u.t.Point){
 		this.keyboard = new KeyboardManager();
 		this.note_field = new GameplayNoteField(scene, chart, this.keyboard, field_loc);
-		this.sound = new SoundManager(scene, song_key);
+		this.sound = new SoundManager(scene);
 		this.scorer = new ScoreRenderer(scene);
 
 		this.note_field.logic.emitter.addListeners(

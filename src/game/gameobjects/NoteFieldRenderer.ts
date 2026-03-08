@@ -36,10 +36,16 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 		this.entities = entities;
 		this.active_range = this.initialActiveRange();
 
+		this.chart.entities.valuesArray().map(n => {
+			if(n.isHold()) n.drawHoldTail(this.base_scroll_speed);
+		})
+
 		this.entity_container = this.initialEntityContainer(scene, entities);
 		this.track_container = new TrackContainer(scene);
 		this.add( [ this.entity_container, this.track_container ] );
 		this.sendToBack(this.track_container);
+
+		this.scrollToTime(0);
 	}
 
 	abstract initialActiveRange(): u.t.Range<EntityIndex>
@@ -55,7 +61,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	// -----------------------------------------------
 
 	scrollToTime(time: number){
-		const dir = time > this.playback_time ? "forward" : "backward";
+		const dir = time >= this.playback_time ? "forward" : "backward";
 		this.updateScroll(time);
 		this.updateWhichEntitiesActive(dir);
 		this.moveActiveEntities();
@@ -155,6 +161,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 		this.active_entities.map(e => e.deactivate());
 		this.active_range = { start: from_ind, end: from_ind };
 		this.updateWhichEntitiesActive("expand");
+		this.moveActiveEntities();
 	}
 }
 

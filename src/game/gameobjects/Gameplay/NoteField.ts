@@ -15,7 +15,7 @@ export class GameplayNoteField {
 		const notes = chart.notesArray();
 
 		this.logic = new GameplayLogic(notes);
-		this.renderer = new GameplayRenderer(scene, chart, notes, pt);
+		this.renderer = new GameplayRenderer(scene, chart, pt);
 		this.logic.emitter.addListeners(
 			{ event: "NOTE_FINISH", fun: this.renderer.onNoteFinish, context: this.renderer },
 			{ event: "NOTE_HIT", fun: this.renderer.onNoteHit, context: this.renderer }
@@ -137,11 +137,8 @@ class GameplayLogic {
 
 // Gameplay uses a pre-sorted list to hold notes and keeps track of active notes with a simple range
 class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
-	constructor(scene: Scene, chart: Chart, notes: Note[], pt: u.t.Point){
+	constructor(scene: Scene, chart: Chart, pt: u.t.Point){
 		super(scene, chart, chart.entities.valuesArray(), pt);
-		notes.map(n => {
-			if(n.isHold()) n.drawHoldTail(this.base_scroll_speed);
-		})
 	}
 
 	override initialActiveRange(): u.t.Range<number> {

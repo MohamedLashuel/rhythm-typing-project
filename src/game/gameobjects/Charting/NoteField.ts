@@ -183,7 +183,7 @@ class ChartingLogic {
 			return;
 		}
 
-		if(this.held.beat < this.cursor.position){
+		if(Beat.compare(this.cursor.position, this.held.beat)) {
 			this.chart.convertNoteToHold(this.held.note, this.cursor.position);
 			this.emitter.emit("HOLD_CREATED", [this.held.note]);
 		}

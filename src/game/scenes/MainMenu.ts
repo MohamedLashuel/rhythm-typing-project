@@ -1,4 +1,7 @@
 import { Scene, GameObjects } from 'phaser';
+import { Song } from '../gameobjects/Song';
+
+const song_json = '{"song_name":"","audio_path":"assets/turkey.ogg","audio_credit":"","charts":[{"author":"","scroll_changes":[],"bpms":[],"entities":[{"chars":["a"],"beat":"0/2/4"}, {"chars":["a"],"beat":"0/2/4"}],"offset":0,"initial_bpm":120}]}';
 
 export class MainMenu extends Scene
 {
@@ -13,6 +16,7 @@ export class MainMenu extends Scene
 
     create ()
     {
+        const song = Song.fromJSON(song_json, this);
         this.logo = this.add.image(512, 300, 'logo');
 
         this.title = this.add.text(512, 460, 'Main Menu', {
@@ -22,11 +26,11 @@ export class MainMenu extends Scene
         }).setOrigin(0.5);
 
         this.input.once('pointerdown', () => {
-            this.scene.start('Game');
+            this.scene.start('Game', { song: song, chart_index: 0 });
         });
 
         this.input?.keyboard?.addKey('c').on("down", () => {
-            this.scene.start('Charting');
+            this.scene.start('Charting', { song: song, chart_index: 0 });
         })
     }
 }

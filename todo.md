@@ -1,12 +1,11 @@
 FOR NEXT RELEASE:
 - Charting screens: Chart properties, song properties, display controls, chart list
-- Create Song type to contain charts
 - Song select
 - Gameplay settings (scroll speed)
-- BUG: Holds not appearing when chart loaded
-- BUG: When renderer initializes before it is ever scrolled, notes don't appear
-- Charting: Set song audio via filepath
-- Determine song to be played by song audio path and not hardcoding
+- Charting: Set song audio via filepath 
+
+CODE TASKS:
+- Refactor: Charts shouldn't store entity graphic objects, they should only store entity specs (such as the existing NoteSpec). NoteFields should create the graphic objects on construction
 
 MISSING FEATURES:
 - Gameplay:
