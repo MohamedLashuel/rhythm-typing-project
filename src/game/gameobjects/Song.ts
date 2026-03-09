@@ -1,10 +1,10 @@
-import { Note, NoteSpec, Timing } from './Note';
+import { Timing } from './Entities/Entity';
 import { Beat } from './Beat';
-import { Scene } from 'phaser';
 import BTree from 'sorted-btree';
-import { Entity } from './NoteFieldRenderer';
 import * as u from '../utils';
 import * as c from '../config';
+import { Scene } from 'phaser';
+import { EntityGroup, entityGroupfromGroupSpec, EntityGroupSpec } from './Entities/EntityGroup';
 
 export class Song {
 	constructor(
@@ -24,11 +24,11 @@ export class Song {
 		};
 	}
 
-	static fromJSON(str: string, scene: Scene): Song {
+	static fromJSON(str: string): Song {
 		const obj = JSON.parse(str);
 
 		return new Song(obj.song_name, obj.audio_path, obj.audio_credit, 
-			obj.charts.map( (o: Object) => Chart.fromJSON(JSON.stringify(o), scene)));
+			obj.charts.map( (o: Object) => Chart.fromJSON(JSON.stringify(o))));
 	}
 }
 
@@ -42,10 +42,12 @@ export type BPMChange = {
 	total_time: number
 }
 
-export type EntityMap = BTree<Beat, Entity>;
-export type EntityMapEntry = [Beat, Entity]
+export type EntityMap = u.GroupTree<Beat, EntityGroup>;
+export type EntityMapEntry = [Beat, Partial<EntityGroup>]
 export type ScrollEntry = [number, ScrollChange]
 export type BPMEntry = [Beat, BPMChange];
+
+export type EntitySpecMap = u.GroupTree<Beat, EntityGroupSpec>
 
 export class Chart {
 	constructor(
@@ -53,7 +55,7 @@ export class Chart {
 		// Indexed by time
 		public scroll_changes: BTree<number, ScrollChange> = new BTree(),
 		public bpms: BTree<Beat, BPMChange> = new BTree(),
-		public entities: EntityMap = new BTree(undefined, Beat.compare),
+		public entity_specs: EntitySpecMap = new u.GroupTree(Beat.compare),
 		// Offset is used solely to play audio
 		// "Playback time" in other objects does not include offset
 		public offset: number = 0,
@@ -99,21 +101,12 @@ export class Chart {
 			+ Beat.beatsToSeconds(beat.toDecimal() - entry[0].toDecimal(), entry[1].bpm);
 	}
 
-	// Will overwrite a note if it exists at the given beat
-	createNote(chars: u.t.Character[], beat: Beat, hold_beat: Beat | undefined, scene: Scene): Note {
-		const new_note = new Note(scene, chars, this.calculateBeatTiming(beat), 
-			hold_beat === undefined ? undefined : this.calculateBeatTiming(hold_beat));
-		this.entities.set(beat, new_note);
-		return new_note;
+	createEntityMap(scene: Scene): EntityMap {
+		return this.entity_specs.map( (es, beat) => this.reviveEntitySpec(es, scene, beat));
 	}
 
-	convertNoteToHold(note: Note, hold_beat: Beat): void {
-		note.turnIntoHold(this.calculateBeatTiming(hold_beat));
-	}
-
-	notesArray(): Note[] {
-		// Works for now, but will have to change when other entities are made
-		return this.entities.valuesArray().flat();
+	reviveEntitySpec(gs: EntityGroupSpec, scene: Scene, beat: Beat): EntityGroup {
+		return entityGroupfromGroupSpec(gs, scene, this, beat);
 	}
 
 	toJSON(): u.t.JSONfied<Chart> {
@@ -121,22 +114,17 @@ export class Chart {
 			author: this.author,
 			scroll_changes: this.scroll_changes.toArray(),
 			bpms: this.bpms.toArray(),
-			entities: this.entities.valuesArray().map(n => n.toSpec()),
+			entity_specs: this.entity_specs.toArray(),
 			offset: this.offset,
 			initial_bpm: this.initial_bpm
 		}
 	}
 
-	static fromJSON(str: string, scene: Scene): Chart {
+	static fromJSON(str: string): Chart {
 		const obj = JSON.parse(str, Chart.jsonReviver);
 		
-		const chart = new Chart(obj.author, obj.scroll_changes, obj.bpms, 
-		new BTree(undefined, Beat.compare), obj.offset, obj.initial_bpm);
-		
-		// TODO: Input validation to make sure we got characters and not any string
-		obj.entities.map( (ns: NoteSpec) => chart.createNote(ns.chars as u.t.Character[], 
-			Beat.fromJSON(ns.beat), ns.hold_beat === undefined ? undefined : Beat.fromJSON(ns.hold_beat), 
-			scene));
+		const chart = new Chart(obj.author, obj.scroll_changes, obj.bpms, obj.entity_specs,
+			obj.offset, obj.initial_bpm);
 
 		return chart;
 	}
@@ -144,8 +132,10 @@ export class Chart {
 	static jsonReviver(k: string, v: any){
 		if(k === "scroll_changes"){
 			return new BTree(v);
-		} else if (k === "bpms"){
+		} else if (k === "bpms") {
 			return new BTree(v.map( ([b, n]: [any, any]) => [Beat.fromJSON(b), n]));
+		} else if (k === "entity_specs"){
+			return new u.GroupTree(Beat.compare, v.map( ([b, n]: [any, any]) => [Beat.fromJSON(b), n]));
 		} else {
 			return v;
 		}

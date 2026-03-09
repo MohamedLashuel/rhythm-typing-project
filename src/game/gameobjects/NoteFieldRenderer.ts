@@ -1,11 +1,10 @@
 import { Scene, GameObjects } from "phaser";
-import { Note } from "./Note";
+import { Entity } from "./Entities/Entity";
 import { Chart } from "./Song";
 import * as u from '../utils';
 import * as c from '../config';
 import * as g from '../graphics';
 
-export type Entity = Note;
 export type UpdateDirection = "forward" | "backward" | "expand" | "contract";
 /*
 Gameplay and charting renderers use different data structures to store entities.
@@ -21,7 +20,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	playback_time: number = 0;
 	scroll_position: number = 0;
 	current_scroll_mod: number = 1;
-	base_scroll_speed: number = 600;
+	settings: u.t.GameplaySettings = { base_scroll_speed: 600 };
 	readonly chart: Chart;
 	active_range: u.t.Range<EntityIndex>;
 
@@ -36,10 +35,6 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 		this.entities = entities;
 		this.active_range = this.initialActiveRange();
 
-		this.chart.entities.valuesArray().map(n => {
-			if(n.isHold()) n.drawHoldTail(this.base_scroll_speed);
-		})
-
 		this.entity_container = this.initialEntityContainer(scene, entities);
 		this.track_container = new TrackContainer(scene);
 		this.add( [ this.entity_container, this.track_container ] );
@@ -53,7 +48,8 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	abstract entitiesToArray(entities: EntityStructType): Entity[];
 
 	initialEntityContainer(scene: Scene, entities: EntityStructType): GameObjects.Container {
-		return new GameObjects.Container(scene, g.RECEPTOR_X, 0, this.entitiesToArray(entities));
+		const entity_graphics = this.entitiesToArray(entities).map(e => e.graphic);
+		return new GameObjects.Container(scene, g.RECEPTOR_X, 0, entity_graphics);
 	}
 
 	// -----------------------------------------------
@@ -76,12 +72,12 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	}
 
 	moveActiveEntities(): void {
-		this.active_entities.forEach(n => 
-			n.x = (n.timing.scroll_pos - this.scroll_position) * this.current_scroll_speed);
+		this.active_entities.forEach(e => 
+			e.graphic.x = (e.timing.scroll_pos - this.scroll_position) * this.current_scroll_speed);
 	}
 
 	setBaseScrollSpeed(speed: number): void {
-		this.base_scroll_speed = speed;
+		this.settings.base_scroll_speed = speed;
 		this.updateWhichEntitiesActive("forward");
 		this.updateWhichEntitiesActive("backward");
 		this.moveActiveEntities();
@@ -92,7 +88,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	// -----------------------------------------------
 
 	get current_scroll_speed(): number {
-		return this.base_scroll_speed * this.current_scroll_mod;
+		return this.settings.base_scroll_speed * this.current_scroll_mod;
 	}
 
 	// The scroll position of the start of the track where entities appear from
@@ -140,9 +136,9 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	setEntityActivity(from_index: EntityIndex, range_side: "start" | "end", dir: "forward" | "backward",
 		toggle: "activate" | "deactivate"): void {
 		const fun1 = (range_side === "end") ? 
-			(n: Note) => this.willEntityAppearSoon(n) :
-			(n: Note) => this.isEntityNotExpiredYet(n);
-		const fun2 = (toggle === "activate") ? (n: Note) => fun1(n) : (n: Note) => !fun1(n);
+			(e: Entity) => this.willEntityAppearSoon(e) :
+			(e: Entity) => this.isEntityNotExpiredYet(e);
+		const fun2 = (toggle === "activate") ? (e: Entity) => fun1(e) : (e: Entity) => !fun1(e);
 
 		const [to_toggle, last_ind] = this.findEntitiesFromIndexWhile(from_index, dir, fun2);
 

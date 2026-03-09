@@ -8,6 +8,7 @@ export class Game extends Scene
     camera: Phaser.Cameras.Scene2D.Camera;
     manager: GameplayManager;
     debug_text: Phaser.GameObjects.Text;
+
     song: Song;
     chart_index: number;
 
@@ -45,7 +46,7 @@ export class Game extends Scene
     update (_time: number, _delta_ms: number)
     {
         this.manager.myUpdate();
-        this.updateDebug();
+        this.updateDebug(this.manager.note_field.renderer.entities.length);
     }
 
     // Used to display values for debugging

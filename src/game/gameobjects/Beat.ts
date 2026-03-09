@@ -60,7 +60,6 @@ export class Beat {
 	}
 
 	static fromJSON(str: string): Beat {
-		console.log(str)
 		const result = str.split("/") as [string, string, string];
 		return new Beat(Number(result[0]), Number(result[1]), Number(result[2]) as c.ValidDivision);
 	}

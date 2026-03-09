@@ -2,10 +2,12 @@ import { GameObjects, Scene } from 'phaser';
 import * as u from '../../utils'
 import * as c from '../../config'
 import * as g from '../../graphics'
-import { Note } from '../Note';
+import { Entity } from '../Entities/Entity';
 import { Beat } from '../Beat';
 import { EntityMap, Chart, EntityMapEntry, Song } from "../Song"
-import { Entity, NoteFieldRenderer } from '../NoteFieldRenderer';
+import { NoteFieldRenderer } from '../NoteFieldRenderer';
+import { GameplaySettings } from '../../types';
+import { Note } from '../Entities/Note';
 
 type Cursor = { position: Beat, increment: c.ValidDivision }
 const DEFAULT_CURSOR: Readonly<Cursor> = { position: Beat.ZERO_BEAT(), increment: 4 }
@@ -18,15 +20,16 @@ export class ChartingNoteField {
 	cursor: Cursor = DEFAULT_CURSOR;
 	playback_time: number = 0;
 	currently_playing: boolean = false;
-	emitter: u.t.MyEmitter = new u.t.MyEmitter();
+	emitter: u.MyEmitter = new u.MyEmitter();
 	held?: { beat: Beat, note: Note }
 
 	constructor(scene: Scene, pt: u.t.Point, song: Song, initial_chart: Chart){
 		this.song = song;
 		this.current_chart = initial_chart;
 
-		this.logic = new ChartingLogic(scene, this.current_chart);
-		this.renderer = new ChartingRenderer(scene, this.current_chart, this.current_chart.entities, pt)
+		const entities = initial_chart.createEntityMap(scene);
+		this.logic = new ChartingLogic(scene, this.current_chart, entities, { base_scroll_speed: 600 });
+		this.renderer = new ChartingRenderer(scene, this.current_chart, entities, pt)
 
 		this.logic.emitter.addListeners(
 			{event: "NOTE_CREATED" ,fun: this.renderer.onNoteCreated, context: this.renderer},
@@ -70,7 +73,7 @@ export class ChartingNoteField {
 		const funTable: Record<string, () => void> = {
 			"s": () => {
 				event.preventDefault();
-				this.saveChart();
+				this.saveSong();
 			},
 			"ArrowLeft": () => this.changeScrollSpeed(-20),
 			"ArrowRight": () => this.changeScrollSpeed(20),
@@ -78,12 +81,13 @@ export class ChartingNoteField {
 		funTable[event.key]?.()
 	}
 
-	saveChart(): void {
+	saveSong(): void {
+		this.current_chart.entity_specs = this.logic.entities.mapProps(e => e.toJSON());
 		console.log(JSON.stringify(this.song));
 	}
 
 	changeScrollSpeed(delta: number): void {
-		this.renderer.setBaseScrollSpeed(this.renderer.base_scroll_speed + delta);
+		this.renderer.setBaseScrollSpeed(this.renderer.settings.base_scroll_speed + delta);
 	}
 
 	processKeyUpEvent(event: KeyboardEvent): void {
@@ -145,21 +149,25 @@ export class ChartingNoteField {
 class ChartingLogic {
 	cursor: Cursor = DEFAULT_CURSOR;
 	held: { beat: Beat, note: Note } | undefined = undefined;
-	emitter: u.t.MyEmitter = new u.t.MyEmitter();
+	emitter: u.MyEmitter = new u.MyEmitter();
 
 	constructor(
 		public scene: Scene, 
-		public chart: Chart){}
+		public chart: Chart,
+		public entities: EntityMap,
+		public settings: GameplaySettings){}
 
 	placeOrRemoveChar(char: u.t.Character){
-		const existing_note = this.chart.entities.get(this.cursor.position);
+		const existing_note = this.entities.getProp(this.cursor.position, "note");
 		const new_chars = (existing_note === undefined) ? [char] 
 			: u.toggleInclusion(existing_note.chars, char)
 
 		if(new_chars.length === 0){
-			this.chart.entities.delete(this.cursor.position);
+			this.entities.deleteProp(this.cursor.position, "note");
 		} else {
-			const new_note = this.chart.createNote(new_chars, this.cursor.position, undefined, this.scene);
+			const new_note = new Note(this.scene, new_chars, this.settings, 
+				this.chart.calculateBeatTiming(this.cursor.position))
+			this.entities.setProp(this.cursor.position, "note", new_note);
 			this.emitter.emit("NOTE_CREATED", [new_note, this.cursor.position]);
 			this.held = { beat: this.cursor.position, note: new_note };
 		}
@@ -167,9 +175,9 @@ class ChartingLogic {
 	}
 
 	deleteNoteAt(beat: Beat){
-		const existing_note = this.chart.entities.get(beat);
+		const existing_note = this.entities.getProp(beat, "note");
 		if(existing_note !== undefined){
-			this.chart.entities.delete(beat);
+			this.entities.deleteProp(beat, "note");
 			this.emitter.emit("NOTE_DELETED", [existing_note]);
 		}
 	}
@@ -184,7 +192,7 @@ class ChartingLogic {
 		}
 
 		if(Beat.compare(this.cursor.position, this.held.beat)) {
-			this.chart.convertNoteToHold(this.held.note, this.cursor.position);
+			this.held.note.turnIntoHold(this.chart.calculateBeatTiming(this.cursor.position));
 			this.emitter.emit("HOLD_CREATED", [this.held.note]);
 		}
 		this.held = undefined;
@@ -231,8 +239,8 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 		return this.entities.maxKey() ?? Beat.ZERO_BEAT();
 	}
 
-	override entitiesToArray(notes: EntityMap): Note[] {
-		return notes.valuesArray().flat();
+	override entitiesToArray(entities: EntityMap): Entity[] {
+		return u.flatProperties(entities.valuesArray());
 	}
 
 	// Return note entries after a key while a predicate returns true
@@ -243,22 +251,24 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 		return u.iterateWhile(itr, ([k, v]) => pred([k, v]))
 	}
 
-	override findEntitiesFromIndexWhile(index: Beat, dir: "forward" | "backward", pred: (n: Note) => boolean)
+	override findEntitiesFromIndexWhile(index: Beat, dir: "forward" | "backward", pred: (e: Entity) => boolean)
 			: [Entity[], Beat] {
 		const [entries, last_entry] = this.takeEntriesFromKeyWhile(index,
 			([_k, v]) => {
-				return pred(v)
+				const entity_maybe = Object.values(v)[0];
+				if(entity_maybe === undefined) console.error("Iterated through empty entity group")
+				return entity_maybe === undefined ? true : pred(entity_maybe);
 			}, dir);
 		const default_val = (dir === "forward") ? this.entitiesSafeMaxKey() : Beat.ZERO_BEAT();
-		const entities = entries.map( ( [_k, v] ) => v);
+		const entities = entries.map( ( [_k, v] ) => v).map(g => Object.values(g)).flat();
 		return [entities, (last_entry === undefined) ? default_val : last_entry[0]];
 	}
 
-	override get active_entities(): Note[] {
+	override get active_entities(): Entity[] {
 		const [active_entries, _last] = 
 			this.takeEntriesFromKeyWhile(this.active_range.start, 
 				([k, _v]) => Beat.compare(k, this.active_range.end) <= 0)
-		return active_entries.map( ([_k, v]) => v)
+		return u.flatProperties(active_entries.map( ([_k, v]) => v))
 	}
 
 	// Expand the active range to ensure it covers the provided beat
@@ -283,17 +293,17 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 	}
 
 	onNoteCreated(note: Note, beat: Beat): void {
-		this.entity_container.add(note);
+		this.entity_container.add(note.graphic);
 		note.activate();
 		this.expandActiveRangeTo(beat);
 	}
 
 	onHoldCreated(note: Note): void {
-		note.drawHoldTail(this.base_scroll_speed);
+		note.redraw(this.scene, this.settings);
 	}
 
 	onNoteDeleted(note: Note): void {
-		this.entity_container.remove(note);
+		this.entity_container.remove(note.graphic);
 		note.deactivate();
 	}
 }

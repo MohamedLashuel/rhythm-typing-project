@@ -1,5 +1,5 @@
 import { Beat } from "./gameobjects/Beat"
-import { Note } from "./gameobjects/Note"
+import { Note } from "./gameobjects/Entities/Note"
 
 export type Character = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" |
 "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | 
@@ -15,6 +15,9 @@ export type Range<T> = {
 	start: T,
 	end: T
 }
+
+export type Comparator<T> = (a: T, b: T) => number;
+export type ComparatorIfNecessary<T> = T extends string | number ? Comparator<T> | undefined : Comparator<T>
 
 // Specifically excludes class properties which are functions, only includes real methods
 type ClassMethod = (...args: any[]) => any;
@@ -55,18 +58,9 @@ type ListenerGeneric<E> = E extends Event ? {
 
 export type Listener = ListenerGeneric<Event>;
 
-// Emits Phaser events with automatic type checking
-export class MyEmitter {
-	private event_emitter: Phaser.Events.EventEmitter = new Phaser.Events.EventEmitter();
-
-	emit<E extends Event>(code: E, args: EventTable[E]): void {
-		this.event_emitter.emit(code, ...args);
-	}
-
-	addListeners(...listeners: Listener[]): void {
-		listeners.forEach( (l) => this.event_emitter.on(l.event, l.fun, l.context));
-	}
-}
-
 export type SoundInstance = Phaser.Sound.NoAudioSound | Phaser.Sound.WebAudioSound 
 	| Phaser.Sound.HTML5AudioSound
+
+export type GameplaySettings = {
+	base_scroll_speed: number
+}

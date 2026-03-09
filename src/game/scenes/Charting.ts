@@ -10,10 +10,10 @@ export class Charting extends Scene
     manager: ChartingManager;
     debug_text: Phaser.GameObjects.Text;
 
-    constructor (
-        public song: Song,
-        public chart_index: number
-    ) {
+    song: Song;
+    chart_index: number;
+
+    constructor () {
         super('Charting');
     }
 
@@ -32,18 +32,19 @@ export class Charting extends Scene
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x000000);
         
-        this.manager = new ChartingManager(this, {x: 0, y: g.NOTE_FIELD_Y});
+        this.manager = new ChartingManager(this, {x: 0, y: g.NOTE_FIELD_Y}, 
+            { song: this.song, chart_ind: this.chart_index});
         this.manager.keyboard.registerHandlers(this);
         // This isn't needed for the game scene, but it is needed here. No clue why.
         this.add.existing(this.manager.note_field.renderer);
 
-        this.debug_text = this.add.text(10, 600, "");
+        this.debug_text = this.add.text(10, 700, "", g.NOTE_STYLE);
         
     }
 
     update (_time: number, delta_ms: number)
     {
-        this.updateDebug("");
+        this.updateDebug(this.manager.note_field.renderer.active_entities.length);
         this.manager.myUpdate(delta_ms);
     }
 

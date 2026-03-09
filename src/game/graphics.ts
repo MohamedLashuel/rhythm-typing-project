@@ -21,13 +21,13 @@ export const INFO_TEXT_Y = 200
 export const CHARTING_SCREEN_BG_COLOR = 0xff00ff
 
 // Text styles
-export const NOTE_STYLE: Partial<Phaser.GameObjects.TextStyle> = {
+export const NOTE_STYLE = {
     fontFamily: 'note_font', 
     fontSize: 52,
     color: '#ffffff',
     strokeThickness: 2,
     align: 'center'
-}
+} satisfies Partial<Phaser.GameObjects.TextStyle>
 
 export const NORMAL_NOTE_PALETTE: Record<c.ValidDivision, string> = {
     4: '#ff0000',

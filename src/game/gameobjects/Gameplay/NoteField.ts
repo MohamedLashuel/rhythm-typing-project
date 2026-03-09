@@ -1,10 +1,11 @@
- import { Scene } from 'phaser';
+import { Scene } from 'phaser';
 import * as u from '../../utils'
 import * as c from '../../config'
-import { Note } from '../Note';
+import { Entity } from '../Entities/Entity';
 import { Chart } from "../Song"
-import { Entity, NoteFieldRenderer } from '../NoteFieldRenderer';
+import { NoteFieldRenderer } from '../NoteFieldRenderer';
 import { KeyboardManager } from '../KeyboardManager';
+import { Note } from '../Entities/Note';
 
 export class GameplayNoteField {
 	logic: GameplayLogic;
@@ -12,10 +13,12 @@ export class GameplayNoteField {
 	keyboard: KeyboardManager;
 
 	constructor(scene: Scene, chart: Chart, keyboard: KeyboardManager, pt: u.t.Point) {
-		const notes = chart.notesArray();
+		const entities = chart.createEntityMap(scene).valuesArray();
+		console.log(entities);
+		const notes = entities.map(e => e.note).filter(v => v !== undefined);
 
 		this.logic = new GameplayLogic(notes);
-		this.renderer = new GameplayRenderer(scene, chart, pt);
+		this.renderer = new GameplayRenderer(scene, chart, u.flatProperties(entities), pt);
 		this.logic.emitter.addListeners(
 			{ event: "NOTE_FINISH", fun: this.renderer.onNoteFinish, context: this.renderer },
 			{ event: "NOTE_HIT", fun: this.renderer.onNoteHit, context: this.renderer }
@@ -41,7 +44,7 @@ class GameplayLogic {
 	playback_time: number = 0;
 	// Notes before this index can't be hit. Used to cut down on processing
 	current_index: number = 0;
-	emitter: u.t.MyEmitter = new u.t.MyEmitter();
+	emitter: u.MyEmitter = new u.MyEmitter();
 	score: number = 0;
 
 	constructor(notes: Note[]){
@@ -137,8 +140,8 @@ class GameplayLogic {
 
 // Gameplay uses a pre-sorted list to hold notes and keeps track of active notes with a simple range
 class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
-	constructor(scene: Scene, chart: Chart, pt: u.t.Point){
-		super(scene, chart, chart.entities.valuesArray(), pt);
+	constructor(scene: Scene, chart: Chart, entities: Entity[], pt: u.t.Point){
+		super(scene, chart, entities, pt);
 	}
 
 	override initialActiveRange(): u.t.Range<number> {
@@ -170,14 +173,14 @@ class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
 	}
 
 	onNoteFinish(note: Note): void {
-		this.remove(note)
 		this.scene.tweens.add({
-			targets: note,
+			targets: note.graphic,
 			x: 0,
 			y: -this.y,
 			duration: 200,
 			ease: 'Linear',
-			onComplete: () => note.destroy()
+			onComplete: () => note.graphic.destroy()
 		});
+		this.remove(note.graphic);
 	} 
 }

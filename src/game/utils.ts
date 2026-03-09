@@ -1,3 +1,4 @@
+import BTree from "sorted-btree";
 import * as t from "./types"
 export * as t from "./types"
 
@@ -5,9 +6,31 @@ export function isChar(str: string): str is t.Character {
 	return /^[A-z]$/.test(str);
 }
 
-// Return an array without any of the specified elements
-export function without<T>(ary: T[], els: T[]): T[] {
+export function arrayWithout<T>(ary: T[], els: T[]): T[] {
 	return ary.filter(v => !els.includes(v));
+}
+
+export function objectWithout<T extends Record<string, any>, K extends string>(obj: T, props: K[])
+: Omit<typeof obj, K> {
+  obj = { ...obj };
+  props.forEach(prop => delete obj[prop]);
+  return obj;
+}
+
+export function mapObject<K extends PropertyKey, V, R>(obj: Partial<Record<K, V>>, fun: (v: V, k: K) => R )
+: Record<K, R>{
+	const entries = Object.entries(obj) as [K, V][];
+	const new_entries = entries.map( ([k, v]) => [k, fun(v, k)]);
+	return Object.fromEntries(new_entries);
+}
+
+export function isObjectEmpty(obj: any){
+	for (const key in obj) if (Object.hasOwn(obj, key)) return false;
+	return true;
+}
+
+export function flatProperties<T>(ary: { [s: string]: T}[]) {
+	return ary.map(o => Object.values(o)).flat();
 }
 
 // Take elements from an array while a predicate function returns true
@@ -106,7 +129,7 @@ export function arraysHaveSameValues(a1: any[], a2: any[]): boolean {
 }
 
 export function toggleInclusion<T>(ary: T[], obj: T): T[] {
-	return ary.includes(obj) ? without(ary, [ obj ] ) : ary.concat( [ obj ] );
+	return ary.includes(obj) ? arrayWithout(ary, [ obj ] ) : ary.concat( [ obj ] );
 }
 
 export function clamp(x: number, min: number, max: number){
@@ -116,3 +139,78 @@ export function clamp(x: number, min: number, max: number){
 export function clampedIndex<T>(i: number, ary: readonly T[]): T {
 	return ary[clamp(i, 0, ary.length)] as T
 }
+
+export function range(first: number, second?: number, step: number = 1){
+	const start = (second === undefined) ? 0 : first;
+	const end = (second === undefined) ? first : second;
+
+	const ary = [];
+	for(let i = start; i < end; i += step){
+		ary.push(i);
+	}
+
+	return ary;
+}
+
+// Emits Phaser events with automatic type checking
+export class MyEmitter {
+	private event_emitter: Phaser.Events.EventEmitter = new Phaser.Events.EventEmitter();
+
+	emit<E extends t.Event>(code: E, args: t.EventTable[E]): void {
+		this.event_emitter.emit(code, ...args);
+	}
+
+	addListeners(...listeners: t.Listener[]): void {
+		listeners.forEach( (l) => this.event_emitter.on(l.event, l.fun, l.context));
+	}
+}
+
+// Binary tree specialized for storing objects with solely optional properties
+export class GroupTree<K, V extends {}> extends BTree<K, Partial<V>> {
+	compare: t.ComparatorIfNecessary<K>;
+	// Giving a function to compare is mandatory only if not keyed by string/number
+	constructor(compare: t.ComparatorIfNecessary<K>, entries?: [K, Partial<V>][]){
+		super(entries, compare);
+		this.compare = compare;
+	}
+
+	// I think BTree's get is incorrectly typed - if a default value is supplied, returning undefined should
+	// be impossible. This retyping fixes it.
+	get(key: K): Partial<V> | undefined
+	get(key: K, default_val: Partial<V>): Partial<V>
+	get(key: K, default_val?: Partial<V>): Partial<V> | undefined {
+		return super.get(key, default_val)
+	}
+
+	getProp<P extends keyof V>(key: K, prop: P): V[P] | undefined {
+		return this.get(key)?.[prop];
+	}
+
+	setProp<P extends keyof V>(key: K, prop: P, val: V[P]){
+		const result = this.get(key);
+		if(result === undefined){
+			const obj: Partial<V> = {};
+			obj[prop] = val;
+			this.set(key, obj);
+		} else {
+			result[prop] = val;
+		}
+	}
+
+	deleteProp<P extends keyof V>(key: K, prop: P){
+		const result: Partial<V> = this.get(key) ?? {};
+		delete result[prop];
+		if(isObjectEmpty(result)) this.delete(key);
+	}
+
+	map<R extends {}>(fun: (v: Partial<V>, k: K, i: number) => Partial<R>): GroupTree<K, R>{
+		const new_entries = this.mapValues(fun).toArray();
+		return new GroupTree<K, R>(this.compare, new_entries);
+	}
+
+	mapProps<R extends {}>(fun: (v: V[keyof V], k: K) => R): GroupTree<K, Record<keyof V, R>> {
+		return this.map( (group, key) => mapObject(group, val => fun(val, key)));
+	}
+}
+
+BTree.prototype.mapValues
