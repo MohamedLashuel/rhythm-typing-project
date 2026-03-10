@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { Chart, Song } from '../gameobjects/Song';
-import * as g from '../graphics'
+import * as u from '../utils';
+import * as g from '../graphics';
 import { GameplayManager } from '../gameobjects/Gameplay/Manager';
 
 export class Game extends Scene
@@ -33,7 +34,7 @@ export class Game extends Scene
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x000000);
 
-        this.manager = new GameplayManager(this, this.chart, {x: 0, y: g.NOTE_FIELD_Y});
+        this.manager = new GameplayManager(this, u.DEFAULT_SETTINGS, this.chart, {x: 0, y: g.NOTE_FIELD_Y});
         this.manager.keyboard.registerHandlers(this);
         
         this.debug_text = this.add.text(10, 600, "", g.NOTE_STYLE);
@@ -46,7 +47,7 @@ export class Game extends Scene
     update (_time: number, _delta_ms: number)
     {
         this.manager.myUpdate();
-        this.updateDebug(this.manager.note_field.renderer.entities.length);
+        this.updateDebug();
     }
 
     // Used to display values for debugging

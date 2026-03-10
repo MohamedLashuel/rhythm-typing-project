@@ -12,13 +12,14 @@ export class GameplayNoteField {
 	renderer: GameplayRenderer;
 	keyboard: KeyboardManager;
 
-	constructor(scene: Scene, chart: Chart, keyboard: KeyboardManager, pt: u.t.Point) {
-		const entities = chart.createEntityMap(scene).valuesArray();
+	constructor(scene: Scene, chart: Chart, settings: u.t.GameplaySettings, 
+			keyboard: KeyboardManager, pt: u.t.Point) {
+		const entities = chart.createEntityMap().valuesArray();
 		console.log(entities);
 		const notes = entities.map(e => e.note).filter(v => v !== undefined);
 
 		this.logic = new GameplayLogic(notes);
-		this.renderer = new GameplayRenderer(scene, chart, u.flatProperties(entities), pt);
+		this.renderer = new GameplayRenderer(scene, settings, chart, u.flatProperties(entities), pt);
 		this.logic.emitter.addListeners(
 			{ event: "NOTE_FINISH", fun: this.renderer.onNoteFinish, context: this.renderer },
 			{ event: "NOTE_HIT", fun: this.renderer.onNoteHit, context: this.renderer }
@@ -140,8 +141,9 @@ class GameplayLogic {
 
 // Gameplay uses a pre-sorted list to hold notes and keeps track of active notes with a simple range
 class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
-	constructor(scene: Scene, chart: Chart, entities: Entity[], pt: u.t.Point){
-		super(scene, chart, entities, pt);
+	constructor(scene: Scene, settings: u.t.GameplaySettings, chart: Chart, entities: Entity[], 
+			pt: u.t.Point){
+		super(scene, settings, chart, entities, pt);
 	}
 
 	override initialActiveRange(): u.t.Range<number> {

@@ -3,7 +3,6 @@ import { Beat } from './Beat';
 import BTree from 'sorted-btree';
 import * as u from '../utils';
 import * as c from '../config';
-import { Scene } from 'phaser';
 import { EntityGroup, entityGroupfromGroupSpec, EntityGroupSpec } from './Entities/EntityGroup';
 
 export class Song {
@@ -101,12 +100,12 @@ export class Chart {
 			+ Beat.beatsToSeconds(beat.toDecimal() - entry[0].toDecimal(), entry[1].bpm);
 	}
 
-	createEntityMap(scene: Scene): EntityMap {
-		return this.entity_specs.map( (es, beat) => this.reviveEntitySpec(es, scene, beat));
+	createEntityMap(): EntityMap {
+		return this.entity_specs.map( (es, beat) => this.reviveEntitySpec(es, beat));
 	}
 
-	reviveEntitySpec(gs: EntityGroupSpec, scene: Scene, beat: Beat): EntityGroup {
-		return entityGroupfromGroupSpec(gs, scene, this, beat);
+	reviveEntitySpec(gs: EntityGroupSpec, beat: Beat): EntityGroup {
+		return entityGroupfromGroupSpec(gs, this, beat);
 	}
 
 	toJSON(): u.t.JSONfied<Chart> {

@@ -1,7 +1,7 @@
 import { Scene, GameObjects } from 'phaser';
 import { Song } from '../gameobjects/Song';
 
-const song_json = '{"song_name":"","audio_path":"assets/turkey.ogg","audio_credit":"","charts":[{"author":"","scroll_changes":[],"bpms":[],"entity_specs":[["0/1/8",{"note":{"chars":["a"]}}]],"offset":0,"initial_bpm":120}]}'
+const song_json = '{"song_name":"","audio_path":"assets/turkey.ogg","audio_credit":"","charts":[{"author":"","scroll_changes":[],"bpms":[],"entity_specs":[["0/1/8",{"note":{"chars":["a"]}}],["0/1/4",{"note":{"chars":["a"]}}],["0/4/12",{"note":{"chars":["d"]}}],["0/5/12",{"note":{"chars":["e"]}}],["0/2/4",{"note":{"chars":["b"]}}]],"offset":0,"initial_bpm":120}]}'
 
 export class MainMenu extends Scene
 {

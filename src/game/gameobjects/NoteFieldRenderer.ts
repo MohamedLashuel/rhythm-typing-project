@@ -20,7 +20,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	playback_time: number = 0;
 	scroll_position: number = 0;
 	current_scroll_mod: number = 1;
-	settings: u.t.GameplaySettings = { base_scroll_speed: 600 };
+	settings: u.t.GameplaySettings;
 	readonly chart: Chart;
 	active_range: u.t.Range<EntityIndex>;
 
@@ -28,14 +28,17 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	// INITIALIZATION
 	// -----------------------------------------------
 
-	constructor(scene: Scene, chart: Chart, entities: EntityStructType, pt: u.t.Point){
+	constructor(scene: Scene, settings: u.t.GameplaySettings,
+			chart: Chart, entities: EntityStructType, pt: u.t.Point){
 		super(scene, pt.x, pt.y);
 
 		this.chart = chart;
 		this.entities = entities;
+		this.settings = settings;
 		this.active_range = this.initialActiveRange();
 
-		this.entity_container = this.initialEntityContainer(scene, entities);
+		this.entity_container = new GameObjects.Container(scene, g.RECEPTOR_X, 0);
+		this.entitiesToArray(entities).forEach(e => this.addEntity(e));
 		this.track_container = new TrackContainer(scene);
 		this.add( [ this.entity_container, this.track_container ] );
 		this.sendToBack(this.track_container);
@@ -47,14 +50,14 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 
 	abstract entitiesToArray(entities: EntityStructType): Entity[];
 
-	initialEntityContainer(scene: Scene, entities: EntityStructType): GameObjects.Container {
-		const entity_graphics = this.entitiesToArray(entities).map(e => e.graphic);
-		return new GameObjects.Container(scene, g.RECEPTOR_X, 0, entity_graphics);
-	}
-
 	// -----------------------------------------------
 	// MAIN FUNCTIONALITY
 	// -----------------------------------------------
+
+	addEntity(entity: Entity) {
+		if(entity.graphic === undefined) entity.draw(this.scene, this.settings);
+		this.entity_container.add(entity.graphic);
+	}
 
 	scrollToTime(time: number){
 		const dir = time >= this.playback_time ? "forward" : "backward";

@@ -24,7 +24,7 @@ export abstract class Entity {
 
 	abstract createGraphic(scene: Scene, settings: u.t.GameplaySettings): PhaserGraphic;
 
-	redraw(scene: Scene, settings: u.t.GameplaySettings): void {
+	draw(scene: Scene, settings: u.t.GameplaySettings): void {
 		this.graphic = this.createGraphic(scene, settings);
 	}
 

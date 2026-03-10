@@ -1,5 +1,4 @@
 import * as u from '../../utils';
-import { Scene } from "phaser";
 import { Entity, Timing } from "./Entity";
 import { Note } from "./Note";
 import { Chart } from "../Song";
@@ -14,14 +13,14 @@ type EntityKey = keyof EntityGroup;
 export type EntityGroupSpec = Partial<Record<EntityKey, any>>;
 
 // Chart needs to be passed in to calculate end timing for each entity
-export function entityGroupfromGroupSpec(gs: EntityGroupSpec, scene: Scene, chart: Chart, beat: Beat)
+export function entityGroupfromGroupSpec(gs: EntityGroupSpec, chart: Chart, beat: Beat)
 : EntityGroup {
 	const timing = chart.calculateBeatTiming(beat);
 	const new_gs = u.objectWithout(gs, ["beat"]);
-	return u.mapObject(new_gs, (v, k) => entityFromJSONObj(v, k, scene, timing, chart));
+	return u.mapObject(new_gs, (v, k) => entityFromJSONObj(v, k, timing, chart));
 }
 
-function entityFromJSONObj<Key extends EntityKey>(obj: any, name: Key, scene: Scene, timing: Timing, 
+function entityFromJSONObj<Key extends EntityKey>(obj: any, name: Key, timing: Timing, 
 	chart: Chart)
 : EntityGroup[Key] {
 	const proto = PROTO_TABLE[name].prototype;
@@ -30,6 +29,5 @@ function entityFromJSONObj<Key extends EntityKey>(obj: any, name: Key, scene: Sc
 	if(Object.hasOwn(obj, "end_timing")) 
 		obj.end_timing = chart.calculateBeatTiming(Beat.fromJSON(obj.end_timing));
 	obj.finalizePostJSON();
-	obj.graphic = obj.createGraphic(scene);
 	return obj;
 }

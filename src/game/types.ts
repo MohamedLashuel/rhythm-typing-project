@@ -62,5 +62,6 @@ export type SoundInstance = Phaser.Sound.NoAudioSound | Phaser.Sound.WebAudioSou
 	| Phaser.Sound.HTML5AudioSound
 
 export type GameplaySettings = {
-	base_scroll_speed: number
+	base_scroll_speed: number,
+	music_rate: number
 }

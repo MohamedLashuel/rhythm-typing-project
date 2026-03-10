@@ -12,12 +12,10 @@ export class Note extends Entity {
 	hit_chars: u.t.Character[] = [];
 	declare graphic: NoteContainer;
 
-	constructor(scene: Scene, chars: u.t.Character[], settings: u.t.GameplaySettings,
-		timing: Timing, end_timing?: Timing
+	constructor(chars: u.t.Character[], timing: Timing, end_timing?: Timing
 	){
 		super(timing, end_timing);
 		this.chars = chars;
-		this.graphic = this.createGraphic(scene, settings);
 	}
 
 	override createGraphic(scene: Scene, settings: u.t.GameplaySettings): NoteContainer {

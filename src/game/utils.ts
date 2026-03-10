@@ -213,4 +213,7 @@ export class GroupTree<K, V extends {}> extends BTree<K, Partial<V>> {
 	}
 }
 
-BTree.prototype.mapValues
+export const DEFAULT_SETTINGS = {
+	base_scroll_speed: 600,
+	music_rate: 1
+}

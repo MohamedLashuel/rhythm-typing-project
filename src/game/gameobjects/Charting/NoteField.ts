@@ -6,7 +6,6 @@ import { Entity } from '../Entities/Entity';
 import { Beat } from '../Beat';
 import { EntityMap, Chart, EntityMapEntry, Song } from "../Song"
 import { NoteFieldRenderer } from '../NoteFieldRenderer';
-import { GameplaySettings } from '../../types';
 import { Note } from '../Entities/Note';
 
 type Cursor = { position: Beat, increment: c.ValidDivision }
@@ -27,9 +26,9 @@ export class ChartingNoteField {
 		this.song = song;
 		this.current_chart = initial_chart;
 
-		const entities = initial_chart.createEntityMap(scene);
-		this.logic = new ChartingLogic(scene, this.current_chart, entities, { base_scroll_speed: 600 });
-		this.renderer = new ChartingRenderer(scene, this.current_chart, entities, pt)
+		const entities = initial_chart.createEntityMap();
+		this.logic = new ChartingLogic(this.current_chart, entities);
+		this.renderer = new ChartingRenderer(scene, u.DEFAULT_SETTINGS, this.current_chart, entities, pt)
 
 		this.logic.emitter.addListeners(
 			{event: "NOTE_CREATED" ,fun: this.renderer.onNoteCreated, context: this.renderer},
@@ -152,10 +151,8 @@ class ChartingLogic {
 	emitter: u.MyEmitter = new u.MyEmitter();
 
 	constructor(
-		public scene: Scene, 
 		public chart: Chart,
-		public entities: EntityMap,
-		public settings: GameplaySettings){}
+		public entities: EntityMap){}
 
 	placeOrRemoveChar(char: u.t.Character){
 		const existing_note = this.entities.getProp(this.cursor.position, "note");
@@ -165,8 +162,7 @@ class ChartingLogic {
 		if(new_chars.length === 0){
 			this.entities.deleteProp(this.cursor.position, "note");
 		} else {
-			const new_note = new Note(this.scene, new_chars, this.settings, 
-				this.chart.calculateBeatTiming(this.cursor.position))
+			const new_note = new Note(new_chars, this.chart.calculateBeatTiming(this.cursor.position));
 			this.entities.setProp(this.cursor.position, "note", new_note);
 			this.emitter.emit("NOTE_CREATED", [new_note, this.cursor.position]);
 			this.held = { beat: this.cursor.position, note: new_note };
@@ -220,8 +216,9 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 	cursor: Cursor = DEFAULT_CURSOR;
 	info_text: InfoText;
 
-	constructor(scene: Scene, chart: Chart, notes: EntityMap, pt: u.t.Point){
-		super(scene, chart, notes, pt);
+	constructor(scene: Scene, settings: u.t.GameplaySettings, chart: Chart, entities: EntityMap, 
+			pt: u.t.Point){
+		super(scene, settings, chart, entities, pt);
 		this.info_text = new InfoText(scene, { beat: 0, pb_time: 0, increment: DEFAULT_CURSOR.increment });
 		this.add(this.info_text);
 	}
@@ -293,13 +290,14 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 	}
 
 	onNoteCreated(note: Note, beat: Beat): void {
-		this.entity_container.add(note.graphic);
+		this.addEntity(note);
 		note.activate();
 		this.expandActiveRangeTo(beat);
 	}
 
 	onHoldCreated(note: Note): void {
-		note.redraw(this.scene, this.settings);
+		// Redraw note and hold will appear
+		note.draw(this.scene, this.settings);
 	}
 
 	onNoteDeleted(note: Note): void {
