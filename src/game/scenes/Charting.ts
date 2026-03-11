@@ -17,9 +17,8 @@ export class Charting extends Scene
         super('Charting');
     }
 
-    init(data: { song: Song, chart_index: number }) {
-        this.song = data.song;
-        this.chart_index = data.chart_index;
+    init(song: Song) {
+        this.song = song;
     }
 
     preload ()
@@ -32,8 +31,7 @@ export class Charting extends Scene
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x000000);
         
-        this.manager = new ChartingManager(this, {x: 0, y: g.NOTE_FIELD_Y}, 
-            { song: this.song, chart_ind: this.chart_index});
+        this.manager = new ChartingManager(this, {x: 0, y: g.NOTE_FIELD_Y}, this.song);
         this.manager.keyboard.registerHandlers(this);
         // This isn't needed for the game scene, but it is needed here. No clue why.
         this.add.existing(this.manager.note_field.renderer);

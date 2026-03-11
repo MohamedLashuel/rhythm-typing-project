@@ -2,6 +2,7 @@ import { Boot } from './scenes/Boot';
 import { GameOver } from './scenes/GameOver';
 import { Game as MainGame } from './scenes/Game';
 import { Charting } from './scenes/Charting'
+import { Precharting } from './scenes/Precharting'
 import { MainMenu } from './scenes/MainMenu';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
@@ -22,6 +23,7 @@ const config: Phaser.Types.Core.GameConfig = {
         MainMenu,
         MainGame,
         Charting,
+        Precharting,
         GameOver
     ],
     plugins: {

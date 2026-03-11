@@ -16,12 +16,12 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 		extends GameObjects.Container {
 	entity_container: GameObjects.Container;
 	track_container: TrackContainer;
-	readonly entities: EntityStructType;
+	entities: EntityStructType;
 	playback_time: number = 0;
 	scroll_position: number = 0;
 	current_scroll_mod: number = 1;
 	settings: u.t.GameplaySettings;
-	readonly chart: Chart;
+	chart: Chart;
 	active_range: u.t.Range<EntityIndex>;
 
 	// -----------------------------------------------
@@ -32,18 +32,27 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 			chart: Chart, entities: EntityStructType, pt: u.t.Point){
 		super(scene, pt.x, pt.y);
 
-		this.chart = chart;
-		this.entities = entities;
 		this.settings = settings;
-		this.active_range = this.initialActiveRange();
 
 		this.entity_container = new GameObjects.Container(scene, g.RECEPTOR_X, 0);
-		this.entitiesToArray(entities).forEach(e => this.addEntity(e));
+		
 		this.track_container = new TrackContainer(scene);
 		this.add( [ this.entity_container, this.track_container ] );
 		this.sendToBack(this.track_container);
 
+		this.loadChart(chart, entities);
+
 		this.scrollToTime(0);
+	}
+
+	loadChart(chart: Chart, chart_entities: EntityStructType) {
+		this.chart = chart;
+		this.entities = chart_entities;
+
+		this.entity_container.removeAll();
+		this.entitiesToArray(chart_entities).forEach(e => this.addEntity(e));
+
+		this.active_range = this.initialActiveRange();
 	}
 
 	abstract initialActiveRange(): u.t.Range<EntityIndex>

@@ -12,24 +12,18 @@ export class ChartingManager {
 	sound: SoundManager;
 	keyboard: KeyboardManager;
 
-	constructor(scene: Scene, field_loc: u.t.Point, initial_song?: { song: Song, chart_ind: number }){
-		const song = initial_song?.song ?? new Song();
-		const initial_chart = (initial_song === undefined) ? song.charts[0] 
-			: (song.charts[initial_song.chart_ind] ?? song.charts[0]);
+	constructor(scene: Scene, field_loc: u.t.Point, initial_song?: Song){
+		const song = initial_song ?? new Song();
+		const initial_chart = song.charts[0];
 		this.note_field = new ChartingNoteField(scene, field_loc, song, initial_chart);
 		this.sound = new SoundManager(scene);
 		this.screens = new ScreenManager(scene, song, initial_chart);
 		this.keyboard = new KeyboardManager();
 
-		this.note_field.emitter.addListeners({
-            event: "PLAYBACK_START",
-            fun: this.sound.startPlayback,
-            context: this.sound
-        }, {
-        	event: "PLAYBACK_STOP",
-        	fun: this.sound.stopPlayback,
-        	context: this.sound
-        })
+		this.note_field.emitter.addListeners(
+			{event: "PLAYBACK_START", fun: this.sound.startPlayback, context: this.sound}, 
+			{event: "PLAYBACK_STOP", fun: this.sound.stopPlayback, context: this.sound}
+		)
 	}
 
 	processKeyUpEvent(event: KeyboardEvent){ 

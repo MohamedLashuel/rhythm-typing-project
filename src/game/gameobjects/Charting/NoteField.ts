@@ -1,5 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
 import * as u from '../../utils'
+import * as du from '../../domutils'
 import * as c from '../../config'
 import * as g from '../../graphics'
 import { Entity } from '../Entities/Entity';
@@ -27,8 +28,8 @@ export class ChartingNoteField {
 		this.current_chart = initial_chart;
 
 		const entities = initial_chart.createEntityMap();
-		this.logic = new ChartingLogic(this.current_chart, entities);
-		this.renderer = new ChartingRenderer(scene, u.DEFAULT_SETTINGS, this.current_chart, entities, pt)
+		this.logic = new ChartingLogic(initial_chart, entities);
+		this.renderer = new ChartingRenderer(scene, u.DEFAULT_SETTINGS, this.current_chart, entities, pt);
 
 		this.logic.emitter.addListeners(
 			{event: "NOTE_CREATED" ,fun: this.renderer.onNoteCreated, context: this.renderer},
@@ -74,10 +75,7 @@ export class ChartingNoteField {
 
 	processCtrlCommand(event: KeyboardEvent): void {
 		const funTable: Record<string, () => void> = {
-			"s": () => {
-				event.preventDefault();
-				this.saveSong();
-			},
+			"s": () => this.saveSong(),
 			"ArrowLeft": () => this.changeScrollSpeed(-20),
 			"ArrowRight": () => this.changeScrollSpeed(20),
 		}
@@ -94,7 +92,10 @@ export class ChartingNoteField {
 
 	saveSong(): void {
 		this.current_chart.entity_specs = this.logic.entities.mapProps(e => e.toJSON());
-		console.log(JSON.stringify(this.song));
+		const json_string = JSON.stringify(this.song);
+		du.downloadText(json_string, "song.json");
+		// For debugging
+		console.log(json_string);
 	}
 
 	changeScrollSpeed(delta: number): void {
@@ -131,6 +132,16 @@ export class ChartingNoteField {
 			this.resetPlaybackTime();
 		}
 		this.currently_playing = !this.currently_playing;
+	}
+
+	changeChartIndex(new_ind: number): void {
+		const new_chart = this.song.charts[new_ind] ?? this.song.charts[0];
+		const entities = new_chart.createEntityMap();
+		
+		this.current_chart = new_chart;
+
+		this.renderer.loadChart(new_chart, entities);
+		this.logic = new ChartingLogic(new_chart, entities);
 	}
 
 	// -----------------------------------------------

@@ -1,5 +1,5 @@
 FOR NEXT RELEASE:
-- Charting screens: Chart properties, song properties, display controls, chart list, settings
+- Charting screens: Chart properties, song properties, display controls, chart list, gameplay settings
 - Song select
 - Gameplay settings (scroll speed)
 
