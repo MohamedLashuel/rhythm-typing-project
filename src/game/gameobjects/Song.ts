@@ -14,15 +14,6 @@ export class Song {
 		public charts: [Chart, ...Chart[]] = [new Chart()]
 	) {}
 
-	toJSON(): u.t.JSONfied<Song> {
-		return {
-			song_name: this.song_name,
-			audio_path: this.audio_path,
-			audio_credit: this.audio_credit,
-			charts: this.charts.map(ch => ch.toJSON())
-		};
-	}
-
 	static fromJSON(str: string): Song {
 		const obj = JSON.parse(str);
 
@@ -42,7 +33,7 @@ export type BPMChange = {
 }
 
 export type EntityMap = u.GroupTree<Beat, EntityGroup>;
-export type EntityMapEntry = [Beat, Partial<EntityGroup>]
+export type EntityMapEntry = [Beat, Partial<EntityGroup>];
 export type ScrollEntry = [number, ScrollChange]
 export type BPMEntry = [Beat, BPMChange];
 
@@ -61,13 +52,16 @@ export class Chart {
 		public initial_bpm: number = c.DEFAULT_BPM
 	) {}
 
+	// -----------------------------------------------
+	// CALCULATING BEAT TIMING
+	// -----------------------------------------------
+
 	static defaultScrollEntry: ScrollEntry = [0, { mult: 1, total_distance: 0 }];
 	defaultBPMEntry(): BPMEntry {
 		return [ Beat.ZERO_BEAT(), { bpm: this.initial_bpm, total_time: 0 }]
 	}
 
-	calculateBeatTiming(beat: Beat)
-			: Timing {
+	calculateBeatTiming(beat: Beat): Timing {
 		const hit_time = this.calculateHitTime(beat);
 		const scroll_position = this.calculateScrollPosition(hit_time);
 
@@ -100,6 +94,10 @@ export class Chart {
 			+ Beat.beatsToSeconds(beat.toDecimal() - entry[0].toDecimal(), entry[1].bpm);
 	}
 
+	// -----------------------------------------------
+	// CREATING ENTITY MAP
+	// -----------------------------------------------
+
 	createEntityMap(): EntityMap {
 		return this.entity_specs.map( (es, beat) => this.reviveEntitySpec(es, beat));
 	}
@@ -107,6 +105,10 @@ export class Chart {
 	reviveEntitySpec(gs: EntityGroupSpec, beat: Beat): EntityGroup {
 		return entityGroupfromGroupSpec(gs, this, beat);
 	}
+
+	// -----------------------------------------------
+	// JSON
+	// -----------------------------------------------
 
 	toJSON(): u.t.JSONfied<Chart> {
 		return {

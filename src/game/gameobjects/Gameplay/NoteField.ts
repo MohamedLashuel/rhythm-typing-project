@@ -52,6 +52,10 @@ class GameplayLogic {
 		this.notes = notes;
 	}
 
+	// -----------------------------------------------
+	// KEYBOARD PROCESSING
+	// -----------------------------------------------
+
 	processKeyDownEvent(event: KeyboardEvent): void {
 		const key = event.key;
 		if(!u.isChar(key)) return;
@@ -80,32 +84,6 @@ class GameplayLogic {
 		return this.notes.slice(this.current_index);
 	}
 
-	myUpdate(time: number): void {
-		this.missPassedNotes();
-		this.updateCurrentIndex();
-		this.finishPassedHolds();
-		this.playback_time = time; 
-	}
-
-	updateCurrentIndex(): void {
-		this.current_index = 
-			u.marchIndexForward(this.notes, n => n.timing.time < this.playback_time - c.HIT_BUFFER );
-	}
-
-	missPassedNotes(): void {
-		const to_miss = u.takeWhile(this.notes_past_index, n =>
-			(n.timing.time < this.playback_time - c.HIT_BUFFER) && !n.isDone()
-		);
-		to_miss.forEach(_n => this.makeMissJudgment());
-	}
-
-	finishPassedHolds(): void {
-		if(this.held_note !== undefined && this.held_note.end_time < this.playback_time + c.HOLD_BUFFER / 4){
-			this.emitter.emit("NOTE_FINISH", [ this.held_note ]);
-			this.held_note = undefined;
-		}
-	}
-
 	hitNote(note: Note, char: u.t.Character): void {
 		if(!note.canHitChar(char)){
 			console.error("Tried to hit an invalid character on a note")
@@ -119,6 +97,40 @@ class GameplayLogic {
 			this.judgeHit(note, this.playback_time);
 		}
 	}
+
+	// -----------------------------------------------
+	// UPDATING
+	// -----------------------------------------------
+
+	myUpdate(time: number): void {
+		this.missPassedNotes();
+		this.updateCurrentIndex();
+		this.finishPassedHolds();
+		this.playback_time = time; 
+	}
+
+	missPassedNotes(): void {
+		const to_miss = u.takeWhile(this.notes_past_index, n =>
+			(n.timing.time < this.playback_time - c.HIT_BUFFER) && !n.isDone()
+		);
+		to_miss.forEach(_n => this.makeMissJudgment());
+	}
+
+	updateCurrentIndex(): void {
+		this.current_index = 
+			u.marchIndexForward(this.notes, n => n.timing.time < this.playback_time - c.HIT_BUFFER );
+	}
+
+	finishPassedHolds(): void {
+		if(this.held_note !== undefined && this.held_note.end_time < this.playback_time + c.HOLD_BUFFER / 4){
+			this.emitter.emit("NOTE_FINISH", [ this.held_note ]);
+			this.held_note = undefined;
+		}
+	}
+
+	// -----------------------------------------------
+	// SCORING
+	// -----------------------------------------------
 
 	judgeHit(note: Note, cur_time: number){
 		const time_diff = Math.abs(cur_time - note.timing.time);
@@ -146,6 +158,10 @@ class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
 		super(scene, settings, chart, entities, pt);
 	}
 
+	// -----------------------------------------------
+	// NOTEFIELDRENDERER IMPLEMENTATION
+	// -----------------------------------------------
+
 	override initialActiveRange(): u.t.Range<number> {
 		return { start: 0, end: 0 }
 	}
@@ -163,6 +179,10 @@ class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
 		const entities = u.takeWhile(ary, pred);
 		return [entities, index + (dir === "backward" ? -1 : 1) * entities.length]
 	}
+
+	// -----------------------------------------------
+	// EVENT HANDLERS
+	// -----------------------------------------------
 
 	onNoteHit(_note: Note): void {
 		this.scene.tweens.add({

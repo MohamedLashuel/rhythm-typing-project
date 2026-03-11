@@ -8,19 +8,20 @@ export class Beat {
 		public division: c.ValidDivision
 	) {}
 
-	// Make a beat while checking and fixing if index exceeds division or is < 0
-	static makeBeatHandleOverflow(measure: number, index: number, division: c.ValidDivision){
-		const new_idx = (index < 0) ? division + index % division : index % division;
-		const measure_delta = Math.floor(index / division);
-		return new Beat(measure + measure_delta, new_idx, division);
-	}
-
 	static ZERO_BEAT(): Beat {
 		return new Beat(0, 0, 4);
 	}
 
+	// -----------------------------------------------
+	// MAIN FUNCTIONALITY
+	// -----------------------------------------------
+
 	toDecimal(): number {
 		return 4 * (this.measure + (this.index / this.division));
+	}
+
+	static compare(a: Beat, b: Beat): number {
+		return a.toDecimal() - b.toDecimal();
 	}
 
 	get simplified_division(): c.ValidDivision {
@@ -28,12 +29,6 @@ export class Beat {
 		const simplified = this.division / u.gcd(this.index, this.division);
 		if(simplified === 2) return 4;
 		return c.isValidDivision(simplified) ? simplified : this.division;
-	}
-
-	snapNextDivision(division: c.ValidDivision, dir: "forward" | "backward"): Beat {
-		const ratio = this.division / division;
-		const snap_fun = (dir === "forward") ? Math.ceil : Math.floor
-		return Beat.makeBeatHandleOverflow(this.measure, snap_fun(this.index / ratio), division);
 	}
 
 	// If aligned with the division, move by that division. Otherwise, snap to that division
@@ -49,11 +44,28 @@ export class Beat {
 		else return this.snapNextDivision(division, dir);
 	}
 
-	static compare(a: Beat, b: Beat): number {
-		return a.toDecimal() - b.toDecimal();
+	static beatsToSeconds = (beats: number, bpm: number) => beats / bpm * 60
+
+	// -----------------------------------------------
+	// HELPERS
+	// -----------------------------------------------
+
+	snapNextDivision(division: c.ValidDivision, dir: "forward" | "backward"): Beat {
+		const ratio = this.division / division;
+		const snap_fun = (dir === "forward") ? Math.ceil : Math.floor
+		return Beat.makeBeatHandleOverflow(this.measure, snap_fun(this.index / ratio), division);
 	}
 
-	static beatsToSeconds = (beats: number, bpm: number) => beats / bpm * 60
+	// Make a beat while checking and fixing if index exceeds division or is < 0
+	static makeBeatHandleOverflow(measure: number, index: number, division: c.ValidDivision){
+		const new_idx = (index < 0) ? division + index % division : index % division;
+		const measure_delta = Math.floor(index / division);
+		return new Beat(measure + measure_delta, new_idx, division);
+	}
+
+	// -----------------------------------------------
+	// JSON
+	// -----------------------------------------------
 
 	toJSON(): string {
 		return `${this.measure}/${this.index}/${this.division}`;

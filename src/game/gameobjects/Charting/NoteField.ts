@@ -44,9 +44,13 @@ export class ChartingNoteField {
 		}
 	}
 
+	// -----------------------------------------------
+	// KEYBOARD PROCESSING
+	// -----------------------------------------------
+
 	processKeyDownEvent(event: KeyboardEvent): void {
 		if(event.ctrlKey) {
-			this.handleCtrlCommand(event);
+			this.processCtrlCommand(event);
 			return;
 		}
 		if(this.currently_playing && event.key !== " "){
@@ -68,7 +72,7 @@ export class ChartingNoteField {
 		}
 	}
 
-	handleCtrlCommand(event: KeyboardEvent): void {
+	processCtrlCommand(event: KeyboardEvent): void {
 		const funTable: Record<string, () => void> = {
 			"s": () => {
 				event.preventDefault();
@@ -80,6 +84,14 @@ export class ChartingNoteField {
 		funTable[event.key]?.()
 	}
 
+	processKeyUpEvent(event: KeyboardEvent): void {
+		this.logic.handleKeyUp(event);
+	}
+
+	// -----------------------------------------------
+	// ACTIONS
+	// -----------------------------------------------
+
 	saveSong(): void {
 		this.current_chart.entity_specs = this.logic.entities.mapProps(e => e.toJSON());
 		console.log(JSON.stringify(this.song));
@@ -87,16 +99,6 @@ export class ChartingNoteField {
 
 	changeScrollSpeed(delta: number): void {
 		this.renderer.setBaseScrollSpeed(this.renderer.settings.base_scroll_speed + delta);
-	}
-
-	processKeyUpEvent(event: KeyboardEvent): void {
-		this.logic.handleKeyUp(event);
-	}
-
-	moveCursorTo(new_pos: Beat): void {
-		this.playback_time = this.current_chart.calculateHitTime(new_pos);
-		this.renderer.scrollToTime(this.playback_time);
-		this.updateCursorPosition(new_pos);
 	}
 
 	moveCursorBy(increment: c.ValidDivision, dir: "forward" | "backward"): void {
@@ -117,12 +119,6 @@ export class ChartingNoteField {
 		this.renderer.updateCursorIncrement(new_inc);
 	}
 
-	updateCursorPosition(new_pos: Beat): void {
-		this.cursor.position = new_pos;
-		this.logic.cursor.position = new_pos;
-		this.renderer.updateCursorPosition(new_pos);
-	}
-
 	deleteNoteAt(beat: Beat): void {
 		this.logic.deleteNoteAt(beat);
 	}
@@ -135,6 +131,22 @@ export class ChartingNoteField {
 			this.resetPlaybackTime();
 		}
 		this.currently_playing = !this.currently_playing;
+	}
+
+	// -----------------------------------------------
+	// HELPERS
+	// -----------------------------------------------
+
+	updateCursorPosition(new_pos: Beat): void {
+		this.cursor.position = new_pos;
+		this.logic.cursor.position = new_pos;
+		this.renderer.updateCursorPosition(new_pos);
+	}
+
+	moveCursorTo(new_pos: Beat): void {
+		this.playback_time = this.current_chart.calculateHitTime(new_pos);
+		this.renderer.scrollToTime(this.playback_time);
+		this.updateCursorPosition(new_pos);
 	}
 
 	// When stopping playback, move playback time back to the cursor
@@ -192,22 +204,6 @@ class ChartingLogic {
 			this.emitter.emit("HOLD_CREATED", [this.held.note]);
 		}
 		this.held = undefined;
-	}
-}
-
-class InfoText extends GameObjects.Container {
-	beat: GameObjects.Text;
-	pb_time: GameObjects.Text;
-	increment: GameObjects.Text;
-
-	constructor(scene: Scene, initial_txt: { beat: any, pb_time: any, increment: any}) {
-		super(scene, 0, g.INFO_TEXT_Y);
-
-		this.beat = new GameObjects.Text(scene, 0, 0, initial_txt.beat.toString(), g.NOTE_STYLE);
-		this.pb_time = new GameObjects.Text(scene, 400, 0, initial_txt.pb_time.toString(), g.NOTE_STYLE);
-		this.increment = new GameObjects.Text(scene, 800, 0, initial_txt.increment.toString(), g.NOTE_STYLE);
-
-		this.add( [ this.beat, this.pb_time, this.increment ] );
 	}
 }
 
@@ -303,5 +299,21 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 	onNoteDeleted(note: Note): void {
 		this.entity_container.remove(note.graphic);
 		note.deactivate();
+	}
+}
+
+class InfoText extends GameObjects.Container {
+	beat: GameObjects.Text;
+	pb_time: GameObjects.Text;
+	increment: GameObjects.Text;
+
+	constructor(scene: Scene, initial_txt: { beat: any, pb_time: any, increment: any}) {
+		super(scene, 0, g.INFO_TEXT_Y);
+
+		this.beat = new GameObjects.Text(scene, 0, 0, initial_txt.beat.toString(), g.NOTE_STYLE);
+		this.pb_time = new GameObjects.Text(scene, 400, 0, initial_txt.pb_time.toString(), g.NOTE_STYLE);
+		this.increment = new GameObjects.Text(scene, 800, 0, initial_txt.increment.toString(), g.NOTE_STYLE);
+
+		this.add( [ this.beat, this.pb_time, this.increment ] );
 	}
 }

@@ -15,6 +15,8 @@ type PhaserGraphic = GameObjects.GameObject &
 export abstract class Entity {
 	timing: Timing;
 	end_timing?: Timing;
+	// Technically the graphic is undefined until the entity is added to the NoteFieldRenderer
+	// That's the most reasonable overall design I thought of, but it might lead to problems later
 	graphic: PhaserGraphic;
 
 	constructor(timing: Timing, end_timing?: Timing) {
