@@ -2,7 +2,7 @@ import { ChartingNoteField } from "./NoteField";
 import { SoundManager } from "../Sound";
 import * as u from '../../utils';
 import { Scene } from "phaser";
-import { ScreenManager } from "./Screens";
+import { SCREEN_TYPES, ScreenManager } from "./Screens";
 import { Song } from "../Song";
 import { KeyboardManager } from "../KeyboardManager";
 
@@ -15,15 +15,20 @@ export class ChartingManager {
 	constructor(scene: Scene, field_loc: u.t.Point, initial_song?: Song){
 		const song = initial_song ?? new Song();
 		const initial_chart = song.charts[0];
-		this.note_field = new ChartingNoteField(scene, field_loc, song, initial_chart);
-		this.sound = new SoundManager(scene);
-		this.screens = new ScreenManager(scene, song, initial_chart);
+		const settings = u.DEFAULT_SETTINGS;
+		this.note_field = new ChartingNoteField(scene, field_loc, song, initial_chart, settings);
+		this.sound = new SoundManager(scene, settings.sound);
+		this.screens = new ScreenManager(scene, song, 0);
 		this.keyboard = new KeyboardManager();
 
 		this.note_field.emitter.addListeners(
 			{event: "PLAYBACK_START", fun: this.sound.startPlayback, context: this.sound}, 
 			{event: "PLAYBACK_STOP", fun: this.sound.stopPlayback, context: this.sound}
-		)
+		);
+		this.screens.emitter.addListeners(
+			{event: "SONG_PATH_CHANGED", fun: this.sound.changeSongPath, context: this.sound},
+			{event: "SWITCH_CHART", fun: this.note_field.changeChartIndex, context: this.note_field}
+		);
 	}
 
 	processKeyUpEvent(event: KeyboardEvent){ 
@@ -31,8 +36,9 @@ export class ChartingManager {
 	}
 
 	processKeyDownEvent(event: KeyboardEvent){
-		if(event.key === "1" && event.ctrlKey) {
-			this.screens.toggleScreen("chart_props")
+		if(u.isNum(event.key) && event.ctrlKey) {
+			const screen_type = SCREEN_TYPES[Number(event.key) - 1]
+			if(screen_type !== undefined) this.screens.toggleScreen(screen_type);
 		}
 		else if (!this.screens.isActive()) this.note_field.processKeyDownEvent(event); 
 	}

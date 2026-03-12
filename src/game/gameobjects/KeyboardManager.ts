@@ -5,12 +5,12 @@ export class KeyboardManager {
 	up_queue: KeyboardEventQueue = new KeyboardEventQueue();
 
 	handleKeyDown(event: KeyboardEvent){
-		event.preventDefault()
+		if(event.ctrlKey) event.preventDefault();
 		this.down_queue.push(event);
 	}
 
 	handleKeyUp(event: KeyboardEvent){
-		event.preventDefault()
+		if(event.ctrlKey) event.preventDefault();
 		this.up_queue.push(event)
 	}
 

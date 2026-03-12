@@ -6,6 +6,10 @@ export function isChar(str: string): str is t.Character {
 	return /^[A-z]$/.test(str);
 }
 
+export function isNum(str: string): boolean {
+	return /^[0-9]+$/.test(str);
+}
+
 export function arrayWithout<T>(ary: T[], els: T[]): T[] {
 	return ary.filter(v => !els.includes(v));
 }
@@ -213,7 +217,11 @@ export class GroupTree<K, V extends {}> extends BTree<K, Partial<V>> {
 	}
 }
 
-export const DEFAULT_SETTINGS = {
-	base_scroll_speed: 600,
-	music_rate: 1
+export const DEFAULT_SETTINGS: t.GameplaySettings = {
+	render: {
+		base_scroll_speed: 600
+	},
+	sound: {
+		music_rate: 1
+	}
 }

@@ -42,7 +42,9 @@ export type EventTable = {
 	HOLD_CREATED: [Note],
 	NOTE_DELETED: [Note],
 	PLAYBACK_START: [number],
-	PLAYBACK_STOP: []
+	PLAYBACK_STOP: [],
+	SONG_PATH_CHANGED: [string],
+	SWITCH_CHART: [number]
 }
 
 export type Event = keyof EventTable
@@ -62,6 +64,10 @@ export type SoundInstance = Phaser.Sound.NoAudioSound | Phaser.Sound.WebAudioSou
 	| Phaser.Sound.HTML5AudioSound
 
 export type GameplaySettings = {
-	base_scroll_speed: number,
-	music_rate: number
+	render: {
+		base_scroll_speed: number
+	},
+	sound: {
+		music_rate: number
+	}
 }

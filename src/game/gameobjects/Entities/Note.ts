@@ -18,7 +18,7 @@ export class Note extends Entity {
 		this.chars = chars;
 	}
 
-	override createGraphic(scene: Scene, settings: u.t.GameplaySettings): NoteContainer {
+	override createGraphic(scene: Scene, settings: u.t.GameplaySettings["render"]): NoteContainer {
 		return new NoteContainer(scene, settings, this.chars, this.timing, this.end_timing);
 	}
 
@@ -55,7 +55,7 @@ export class Note extends Entity {
 
 class NoteContainer extends GameObjects.Container {
 	num_chars: number;
-	constructor(scene: Scene, settings: u.t.GameplaySettings, chars: u.t.Character[], 
+	constructor(scene: Scene, settings: u.t.GameplaySettings["render"], chars: u.t.Character[], 
 			timing: Timing, end_timing?: Timing) {
 		super(scene);
 		this.num_chars = chars.length;
@@ -75,7 +75,7 @@ class NoteContainer extends GameObjects.Container {
 			.setStyle( { stroke: stroke_color });
 	}
 
-	addHoldTails(settings: GameplaySettings, timing: Timing, end_timing: Timing): void {
+	addHoldTails(settings: GameplaySettings["render"], timing: Timing, end_timing: Timing): void {
 		const tails = this.getYOffsets()
 			.map(y => this.makeHoldTail(y, settings.base_scroll_speed, timing, end_timing))
 		this.add(tails);

@@ -4,10 +4,12 @@ import * as u from '../utils'
 // Audio is preloaded in the scene itself with key "song" (or might not be loaded, which is also ok)
 export class SoundManager {
 	scene: Scene;
+	settings: u.t.GameplaySettings["sound"];
 	song_instance?: u.t.SoundInstance
 
-	constructor(scene: Scene){
+	constructor(scene: Scene, settings: u.t.GameplaySettings["sound"]){
 		this.scene = scene;
+		this.settings = settings;
 		this.trySetSongInstance();
 	}
 
@@ -37,7 +39,9 @@ export class SoundManager {
 		const seek = start_time > 0 ? start_time : 0;
 		const delay = start_time < 0 ? start_time : 0;
 		// Wait until main thread unblocked so that audio syncs properly
-		requestAnimationFrame( () => this.song_instance?.play( { seek: seek, delay: delay } ));
+		requestAnimationFrame( () => this.song_instance?.play( 
+			{ seek: seek, delay: delay, rate: this.settings.music_rate } )
+		);
 	}
 
 	stopPlayback(): void {

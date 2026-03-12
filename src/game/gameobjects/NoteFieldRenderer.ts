@@ -20,7 +20,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	playback_time: number = 0;
 	scroll_position: number = 0;
 	current_scroll_mod: number = 1;
-	settings: u.t.GameplaySettings;
+	settings: u.t.GameplaySettings["render"];
 	chart: Chart;
 	active_range: u.t.Range<EntityIndex>;
 
@@ -28,7 +28,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	// INITIALIZATION
 	// -----------------------------------------------
 
-	constructor(scene: Scene, settings: u.t.GameplaySettings,
+	constructor(scene: Scene, settings: u.t.GameplaySettings["render"],
 			chart: Chart, entities: EntityStructType, pt: u.t.Point){
 		super(scene, pt.x, pt.y);
 
@@ -41,18 +41,18 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 		this.sendToBack(this.track_container);
 
 		this.loadChart(chart, entities);
-
-		this.scrollToTime(0);
 	}
 
 	loadChart(chart: Chart, chart_entities: EntityStructType) {
 		this.chart = chart;
 		this.entities = chart_entities;
 
-		this.entity_container.removeAll();
+		this.entity_container.removeAll(true);
 		this.entitiesToArray(chart_entities).forEach(e => this.addEntity(e));
 
 		this.active_range = this.initialActiveRange();
+		this.scrollToTime(0);
+
 	}
 
 	abstract initialActiveRange(): u.t.Range<EntityIndex>

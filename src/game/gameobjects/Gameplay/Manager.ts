@@ -15,7 +15,7 @@ export class GameplayManager {
 	constructor(scene: Scene, settings: u.t.GameplaySettings, chart: Chart, field_loc: u.t.Point){
 		this.keyboard = new KeyboardManager();
 		this.note_field = new GameplayNoteField(scene, chart, settings, this.keyboard, field_loc);
-		this.sound = new SoundManager(scene);
+		this.sound = new SoundManager(scene, settings.sound);
 		this.scorer = new ScoreRenderer(scene);
 
 		this.note_field.logic.emitter.addListeners(

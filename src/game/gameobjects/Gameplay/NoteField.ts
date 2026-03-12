@@ -19,7 +19,7 @@ export class GameplayNoteField {
 		const notes = entities.map(e => e.note).filter(v => v !== undefined);
 
 		this.logic = new GameplayLogic(notes);
-		this.renderer = new GameplayRenderer(scene, settings, chart, u.flatProperties(entities), pt);
+		this.renderer = new GameplayRenderer(scene, settings.render, chart, u.flatProperties(entities), pt);
 		this.logic.emitter.addListeners(
 			{ event: "NOTE_FINISH", fun: this.renderer.onNoteFinish, context: this.renderer },
 			{ event: "NOTE_HIT", fun: this.renderer.onNoteHit, context: this.renderer }
@@ -153,7 +153,7 @@ class GameplayLogic {
 
 // Gameplay uses a pre-sorted list to hold notes and keeps track of active notes with a simple range
 class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
-	constructor(scene: Scene, settings: u.t.GameplaySettings, chart: Chart, entities: Entity[], 
+	constructor(scene: Scene, settings: u.t.GameplaySettings["render"], chart: Chart, entities: Entity[], 
 			pt: u.t.Point){
 		super(scene, settings, chart, entities, pt);
 	}

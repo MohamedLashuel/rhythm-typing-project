@@ -1,4 +1,7 @@
+import TextAreaInput from "phaser3-rex-plugins/templates/ui/textareainput/TextAreaInput"
+import * as u from './utils';
 import * as c from "./config"
+import { Scene } from "phaser"
 // Contains graphics settings, including object positions, and graphic objects
 
 // Game size
@@ -18,7 +21,7 @@ export const SCORE_TWEEN_SPEED = 400
 
 // Charting
 export const INFO_TEXT_Y = 200
-export const CHARTING_SCREEN_BG_COLOR = 0xff00ff
+export const CHARTING_SCREEN_BG_COLOR = 0x220066
 
 // Text styles
 export const NOTE_STYLE = {
@@ -72,7 +75,18 @@ export const NORMAL_JUDGMENT_PALETTE: Record<string, string> = {
 
 // Graphics objects
 export class Circle extends Phaser.GameObjects.Arc {
-  constructor(scene: Phaser.Scene, x: number, y: number, radius: number, fillColor: number, alpha: number = 1) {
+  constructor(scene: Scene, x: number, y: number, radius: number, fillColor: number, alpha: number = 1) {
     super(scene, x, y, radius, 0, 360, false, fillColor, alpha);
   }
+}
+
+export function chartingScreenTextInput(scene: Scene, pt: u.t.Point, header: string) {
+    return new TextAreaInput(scene, {
+        x: pt.x,
+        y: pt.y,
+        width: 220,
+        height: 100,
+        background: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 0, 0x000000),
+        header: scene.add.text(0, 0, header)
+    }).layout();
 }

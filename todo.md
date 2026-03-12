@@ -1,15 +1,15 @@
 FOR NEXT RELEASE:
+- Main menu
+- Results screen
 - Charting screens: Chart properties, song properties, display controls, chart list, gameplay settings
 - Song select
-- Gameplay settings (scroll speed)
+- Gameplay settings
 
 MISSING FEATURES:
 - Gameplay:
 	- Visualize bpm changes/scroll changes
 
 - Charting:
-	- Load song from file
-	- Download chart file
 	- Change playback rate
 	- Move receptor
 	- BPM/scroll changes

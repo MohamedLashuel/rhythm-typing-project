@@ -24,10 +24,11 @@ export abstract class Entity {
 		this.end_timing = end_timing;
 	}
 
-	abstract createGraphic(scene: Scene, settings: u.t.GameplaySettings): PhaserGraphic;
+	abstract createGraphic(scene: Scene, settings: u.t.GameplaySettings["render"]): PhaserGraphic;
 
-	draw(scene: Scene, settings: u.t.GameplaySettings): void {
+	draw(scene: Scene, settings: u.t.GameplaySettings["render"]): this {
 		this.graphic = this.createGraphic(scene, settings);
+		return this
 	}
 
 	get end_time() {
@@ -52,7 +53,7 @@ export abstract class Entity {
 
 	toJSON() {
 		const to_omit = ["graphic", "timing"]
-			.concat( (this.end_timing === undefined) ? [] : "end_timing");
+			.concat( (this.end_timing === undefined) ? "end_timing" : []);
 		return u.objectWithout(this.prepToJSON(), to_omit);
 	}
 

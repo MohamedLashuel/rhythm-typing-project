@@ -23,13 +23,14 @@ export class ChartingNoteField {
 	emitter: u.MyEmitter = new u.MyEmitter();
 	held?: { beat: Beat, note: Note }
 
-	constructor(scene: Scene, pt: u.t.Point, song: Song, initial_chart: Chart){
+	constructor(scene: Scene, pt: u.t.Point, song: Song, initial_chart: Chart, settings: u.t.GameplaySettings){
 		this.song = song;
 		this.current_chart = initial_chart;
 
 		const entities = initial_chart.createEntityMap();
 		this.logic = new ChartingLogic(initial_chart, entities);
-		this.renderer = new ChartingRenderer(scene, u.DEFAULT_SETTINGS, this.current_chart, entities, pt);
+		this.renderer = new ChartingRenderer(scene, settings.render, 
+			this.current_chart, entities, pt);
 
 		this.logic.emitter.addListeners(
 			{event: "NOTE_CREATED" ,fun: this.renderer.onNoteCreated, context: this.renderer},
@@ -75,7 +76,7 @@ export class ChartingNoteField {
 
 	processCtrlCommand(event: KeyboardEvent): void {
 		const funTable: Record<string, () => void> = {
-			"s": () => this.saveSong(),
+			"s": () => this.downloadSong(),
 			"ArrowLeft": () => this.changeScrollSpeed(-20),
 			"ArrowRight": () => this.changeScrollSpeed(20),
 		}
@@ -90,8 +91,8 @@ export class ChartingNoteField {
 	// ACTIONS
 	// -----------------------------------------------
 
-	saveSong(): void {
-		this.current_chart.entity_specs = this.logic.entities.mapProps(e => e.toJSON());
+	downloadSong(): void {
+		this.saveCurrentChart();
 		const json_string = JSON.stringify(this.song);
 		du.downloadText(json_string, "song.json");
 		// For debugging
@@ -135,13 +136,17 @@ export class ChartingNoteField {
 	}
 
 	changeChartIndex(new_ind: number): void {
+		this.saveCurrentChart();
 		const new_chart = this.song.charts[new_ind] ?? this.song.charts[0];
 		const entities = new_chart.createEntityMap();
 		
 		this.current_chart = new_chart;
 
 		this.renderer.loadChart(new_chart, entities);
-		this.logic = new ChartingLogic(new_chart, entities);
+		this.renderer.scrollToTime(this.playback_time);
+
+		this.logic.chart = new_chart;
+		this.logic.entities = entities;
 	}
 
 	// -----------------------------------------------
@@ -165,6 +170,10 @@ export class ChartingNoteField {
 		const new_time = this.current_chart.calculateHitTime(this.cursor.position);
 		this.playback_time = new_time;
 		this.renderer.scrollToTime(new_time);
+	}
+
+	saveCurrentChart(): void {
+		this.current_chart.entity_specs = this.logic.entities.mapProps(e => e.toJSON());
 	}
 }
 
@@ -223,7 +232,7 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 	cursor: Cursor = DEFAULT_CURSOR;
 	info_text: InfoText;
 
-	constructor(scene: Scene, settings: u.t.GameplaySettings, chart: Chart, entities: EntityMap, 
+	constructor(scene: Scene, settings: u.t.GameplaySettings["render"], chart: Chart, entities: EntityMap, 
 			pt: u.t.Point){
 		super(scene, settings, chart, entities, pt);
 		this.info_text = new InfoText(scene, { beat: 0, pb_time: 0, increment: DEFAULT_CURSOR.increment });
@@ -255,8 +264,8 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 		return u.iterateWhile(itr, ([k, v]) => pred([k, v]))
 	}
 
-	override findEntitiesFromIndexWhile(index: Beat, dir: "forward" | "backward", pred: (e: Entity) => boolean)
-			: [Entity[], Beat] {
+	override findEntitiesFromIndexWhile(index: Beat, dir: "forward" | "backward", 
+			pred: (e: Entity) => boolean): [Entity[], Beat] {
 		const [entries, last_entry] = this.takeEntriesFromKeyWhile(index,
 			([_k, v]) => {
 				const entity_maybe = Object.values(v)[0];
