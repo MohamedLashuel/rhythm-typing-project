@@ -30,8 +30,38 @@ export const NOTE_STYLE = {
     color: '#ffffff',
     strokeThickness: 2,
     align: 'center'
-} satisfies Partial<Phaser.GameObjects.TextStyle>
+} satisfies Partial<Phaser.GameObjects.TextStyle>;
 
+export const BPM_MARKER_STYLE = {
+    fontFamily: 'note_font',
+    fontSize: 26,
+    color: '#ffffff',
+    backgroundColor: '#ff0000'
+} satisfies Partial<Phaser.GameObjects.TextStyle>;
+
+export const SCORE_STYLE = {
+    fontFamily: 'note_font', 
+    fontSize: 48,
+    color: '#ffffff',
+    stroke: '#000000',
+    strokeThickness: 4,
+    align: 'center'
+} satisfies Partial<Phaser.GameObjects.TextStyle>;
+
+export const JUDGMENT_STYLE = {
+    fontFamily: 'note_font', 
+    fontSize: 48,
+    color: '#ffffff',
+    stroke: '#000000',
+    strokeThickness: 4,
+    align: 'center'
+} satisfies Partial<Phaser.GameObjects.TextStyle>;
+
+// Entity styles
+export const SPEED_ZONE_COLOR = 0xff8000;
+export const SLOW_ZONE_COLOR = 0x00ffff;
+
+// Color palettes
 export const NORMAL_NOTE_PALETTE: Record<c.ValidDivision, string> = {
     4: '#ff0000',
     8: '#0000ff',
@@ -46,24 +76,6 @@ export const NORMAL_NOTE_PALETTE: Record<c.ValidDivision, string> = {
     128: '#808080',
     192: '#808080',
     256: '#808080'
-}
-
-export const SCORE_STYLE: Partial<Phaser.GameObjects.TextStyle> = {
-    fontFamily: 'note_font', 
-    fontSize: 48,
-    color: '#ffffff',
-    stroke: '#000000',
-    strokeThickness: 4,
-    align: 'center'
-}
-
-export const JUDGMENT_STYLE: Partial<Phaser.GameObjects.TextStyle> = {
-    fontFamily: 'note_font', 
-    fontSize: 48,
-    color: '#ffffff',
-    stroke: '#000000',
-    strokeThickness: 4,
-    align: 'center'
 }
 
 export const NORMAL_JUDGMENT_PALETTE: Record<string, string> = {

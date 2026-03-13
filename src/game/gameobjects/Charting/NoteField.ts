@@ -8,6 +8,9 @@ import { Beat } from '../Beat';
 import { EntityMap, Chart, EntityMapEntry, Song } from "../Song"
 import { NoteFieldRenderer } from '../NoteFieldRenderer';
 import { Note } from '../Entities/Note';
+import { BpmMarker } from '../Entities/BpmMarker';
+import InputText from 'phaser3-rex-plugins/plugins/inputtext';
+import { ScrollZone } from '../Entities/ScrollZone';
 
 type Cursor = { position: Beat, increment: c.ValidDivision }
 const DEFAULT_CURSOR: Readonly<Cursor> = { position: Beat.ZERO_BEAT(), increment: 4 }
@@ -23,7 +26,8 @@ export class ChartingNoteField {
 	emitter: u.MyEmitter = new u.MyEmitter();
 	held?: { beat: Beat, note: Note }
 
-	constructor(scene: Scene, pt: u.t.Point, song: Song, initial_chart: Chart, settings: u.t.GameplaySettings){
+	constructor(scene: Scene, pt: u.t.Point, song: Song, initial_chart: Chart, 
+			settings: u.t.GameplaySettings){
 		this.song = song;
 		this.current_chart = initial_chart;
 
@@ -33,9 +37,10 @@ export class ChartingNoteField {
 			this.current_chart, entities, pt);
 
 		this.logic.emitter.addListeners(
-			{event: "NOTE_CREATED" ,fun: this.renderer.onNoteCreated, context: this.renderer},
-			{event: "NOTE_DELETED" ,fun: this.renderer.onNoteDeleted, context: this.renderer},
-			{event: "HOLD_CREATED" ,fun: this.renderer.onHoldCreated, context: this.renderer},
+			{event: "ENTITY_CREATED", fun: this.renderer.onEntityCreated, context: this.renderer},
+			{event: "ENTITY_DELETED", fun: this.renderer.onEntityDeleted, context: this.renderer},
+			{event: "HOLD_CREATED", fun: this.renderer.onHoldCreated, context: this.renderer},
+			{event: "TIMINGS_RECALCULATED", fun: this.renderer.onTimingsRecalculated, context: this.renderer}
 		);
 	}
 
@@ -51,11 +56,11 @@ export class ChartingNoteField {
 	// -----------------------------------------------
 
 	processKeyDownEvent(event: KeyboardEvent): void {
-		if(event.ctrlKey) {
-			this.processCtrlCommand(event);
+		if(this.currently_playing && event.key !== " "){
 			return;
 		}
-		if(this.currently_playing && event.key !== " "){
+		if(event.ctrlKey) {
+			this.processCtrlCommand(event);
 			return;
 		}
 		if(u.isChar(event.key)){
@@ -66,7 +71,7 @@ export class ChartingNoteField {
 				ArrowRight: () => this.moveCursorBy(this.cursor.increment, "forward"),
 				ArrowUp: () => this.changeCursorIncrement("increase"),
 				ArrowDown: () => this.changeCursorIncrement("decrease"),
-				Backspace: () => this.deleteNoteAt(this.cursor.position),
+				Backspace: () => this.logic.deleteNoteAt(this.cursor.position),
 				" ": () => this.startOrStopPlayback(),
 
 			}
@@ -76,6 +81,12 @@ export class ChartingNoteField {
 
 	processCtrlCommand(event: KeyboardEvent): void {
 		const funTable: Record<string, () => void> = {
+			"b": () => this.logic.placeOrRemoveBpmChange(
+				(callback, def) => this.renderer.requestNumber(callback, def)
+			),
+			"z": () => this.logic.placeScrollZonePoint(this.cursor.position,
+				(callback, def) => this.renderer.requestNumber(callback, def)
+			),
 			"s": () => this.downloadSong(),
 			"ArrowLeft": () => this.changeScrollSpeed(-20),
 			"ArrowRight": () => this.changeScrollSpeed(20),
@@ -109,7 +120,7 @@ export class ChartingNoteField {
 		this.moveCursorTo(new_pos);
 	}
 
-	movedCursorIncrement(increment: c.ValidDivision, dir: "increase" | "decrease"): c.ValidDivision{
+	movedCursorIncrement(increment: c.ValidDivision, dir: "increase" | "decrease"): c.ValidDivision {
 		const new_index = c.VALID_DIVISIONS.indexOf(increment) + (dir === "increase" ? 1 : -1);
 		return u.clampedIndex(new_index, c.VALID_DIVISIONS);
 	}
@@ -119,10 +130,6 @@ export class ChartingNoteField {
 		this.cursor.increment = new_inc;
 		this.logic.cursor.increment = new_inc;
 		this.renderer.updateCursorIncrement(new_inc);
-	}
-
-	deleteNoteAt(beat: Beat): void {
-		this.logic.deleteNoteAt(beat);
 	}
 
 	startOrStopPlayback(): void {
@@ -160,7 +167,7 @@ export class ChartingNoteField {
 	}
 
 	moveCursorTo(new_pos: Beat): void {
-		this.playback_time = this.current_chart.calculateHitTime(new_pos);
+		this.playback_time = this.logic.chart.calculateHitTime(new_pos);
 		this.renderer.scrollToTime(this.playback_time);
 		this.updateCursorPosition(new_pos);
 	}
@@ -181,6 +188,7 @@ class ChartingLogic {
 	cursor: Cursor = DEFAULT_CURSOR;
 	held: { beat: Beat, note: Note } | undefined = undefined;
 	emitter: u.MyEmitter = new u.MyEmitter();
+	zone_point: Beat | undefined = undefined;
 
 	constructor(
 		public chart: Chart,
@@ -196,17 +204,60 @@ class ChartingLogic {
 		} else {
 			const new_note = new Note(new_chars, this.chart.calculateBeatTiming(this.cursor.position));
 			this.entities.setProp(this.cursor.position, "note", new_note);
-			this.emitter.emit("NOTE_CREATED", [new_note, this.cursor.position]);
+			this.emitter.emit("ENTITY_CREATED", [new_note, this.cursor.position]);
 			this.held = { beat: this.cursor.position, note: new_note };
 		}
-		if(existing_note !== undefined) this.emitter.emit("NOTE_DELETED", [existing_note]);
+		if(existing_note !== undefined) this.emitter.emit("ENTITY_DELETED", [existing_note]);
 	}
 
 	deleteNoteAt(beat: Beat){
 		const existing_note = this.entities.getProp(beat, "note");
 		if(existing_note !== undefined){
 			this.entities.deleteProp(beat, "note");
-			this.emitter.emit("NOTE_DELETED", [existing_note]);
+			this.emitter.emit("ENTITY_DELETED", [existing_note]);
+		}
+	}
+
+	placeOrRemoveBpmChange(requester: (fun: (x: number) => void, def: number) => void) {
+		const existing_change = this.entities.getProp(this.cursor.position, "bpm_marker")
+		if(existing_change !== undefined){
+			// Delete case
+			this.entities.deleteProp(this.cursor.position, "bpm_marker");
+			this.emitter.emit("ENTITY_DELETED", [existing_change]);
+			this.chart.removeBpmChange(this.cursor.position);
+		} else {
+			// Create case
+			requester(new_bpm => {
+				if(new_bpm <= 0) return;
+				const marker = new BpmMarker(this.chart.calculateBeatTiming(this.cursor.position), new_bpm);
+				this.entities.setProp(this.cursor.position, "bpm_marker", marker);
+				this.emitter.emit("ENTITY_CREATED", [marker, this.cursor.position]);
+				this.chart.addBpmChange(this.cursor.position, new_bpm);
+			}, c.DEFAULT_BPM);
+		}
+		this.chart.recalculateEntityTimings(this.entities, this.cursor.position);
+		this.emitter.emit("TIMINGS_RECALCULATED", [this.cursor.position]);
+	}
+
+	placeScrollZonePoint(beat: Beat, requester: (fun: (x: number) => void, def: number) => void){
+		if(this.zone_point === undefined){
+			// Setting first point
+			this.zone_point = beat;
+			return;
+		} else {
+			// Setting second point and creating zone
+			const smaller = Beat.compare(this.zone_point, beat) > 0 ? beat : this.zone_point;
+			const larger = Beat.compare(this.zone_point, beat) > 0 ? this.zone_point : beat;
+			requester(mult => {
+				const zone = new ScrollZone(this.chart.calculateBeatTiming(smaller),
+					this.chart.calculateBeatTiming(larger), mult);
+				this.entities.setProp(smaller, "scroll_zone", zone);
+				this.emitter.emit("ENTITY_CREATED", [zone, beat]);
+				this.chart.addScrollZone(zone);
+				this.chart.recalculateEntityTimings(this.entities, beat);
+				this.emitter.emit("TIMINGS_RECALCULATED", [beat]);
+			}, 1)
+			this.zone_point = undefined;
 		}
 	}
 
@@ -305,20 +356,54 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 		this.info_text.increment.setText(new_inc.toString());
 	}
 
-	onNoteCreated(note: Note, beat: Beat): void {
-		this.addEntity(note);
-		note.activate();
+	onEntityCreated(ent: Entity, beat: Beat): void {
+		this.addEntity(ent);
 		this.expandActiveRangeTo(beat);
+		// Because active range now includes beat, ent is definitely within the active range
+		// and should be visible
+		ent.activate();
+		// E.g. notes will already be at the right spot, but e.g. scroll zones might not be
+		this.moveEntity(ent);
+	}
+
+	onEntityDeleted(ent: Entity): void {
+		this.entity_container.remove(ent.graphic);
+		ent.deactivate();
 	}
 
 	onHoldCreated(note: Note): void {
-		// Redraw note and hold will appear
-		note.draw(this.scene, this.settings);
+		this.redraw(note);
 	}
 
-	onNoteDeleted(note: Note): void {
-		this.entity_container.remove(note.graphic);
-		note.deactivate();
+	// If any active notes had timings recalculated, just reset all active notes 
+	onTimingsRecalculated(at: Beat): void {
+		if(Beat.compare(this.active_range.end, at) > 0) this.resetWhichEntitiesActive(this.cursor.position);
+		this.entities.forEachProp(e => {
+			if(e.end_timing !== undefined) e.draw(this.scene, this.settings);
+		})
+		// Change scroll position and move entities accordingly
+		this.scrollToTime(this.playback_time);
+	}
+
+	// -----------------------------------------------
+	// NUMBER INPUT
+	// -----------------------------------------------
+
+	requestNumber(callback: (x: number) => void, def: number): void {
+		const input = new InputText(this.scene, g.WIDTH / 2, g.HEIGHT / 2, 400, 100, {
+			text: def.toString()
+		}).setOrigin(0.5);
+		this.scene.add.existing(input);
+
+		input.setFocus()
+		.once('blur', (txt: InputText) => {
+			callback(Number(txt.text));
+			txt.destroy();
+		})
+		.on('keydown', (txt: InputText, evt: KeyboardEvent) => {
+			if(evt.key !== "Backspace" && evt.key !== "." && !u.isNum(evt.key)) evt.preventDefault();
+			if(evt.key === "Enter") txt.setBlur();
+		});
 	}
 }
 

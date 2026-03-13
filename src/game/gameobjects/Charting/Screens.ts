@@ -65,7 +65,7 @@ abstract class Screen extends GameObjects.Container {
 		this.setDepth(10).deactivate();
 	}
 
-	// Screens use in different data, so just pass in the whole manager
+	// Screens use different data, so just pass in the whole manager
 	abstract prepopulate(mgr: ScreenManager): void
 	abstract saveChanges(mgr: ScreenManager): void
 

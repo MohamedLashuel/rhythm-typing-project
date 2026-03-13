@@ -8,7 +8,7 @@ export type Timing = {
 	scroll_pos: number
 }
 
-type PhaserGraphic = GameObjects.GameObject & 
+export type PhaserGraphic = GameObjects.GameObject & 
 	{ setVisible(a0: boolean): PhaserGraphic, x: number, y: number };
 
 // Subclasses should override end_timing's type according to whether or not they have it 
@@ -24,11 +24,21 @@ export abstract class Entity {
 		this.end_timing = end_timing;
 	}
 
-	abstract createGraphic(scene: Scene, settings: u.t.GameplaySettings["render"]): PhaserGraphic;
+	// When changing the graphic object, reassigning would clear all properties like position.
+	// Instead, we must use methods to mutate it without reassigning
+	abstract initialGraphic(scene: Scene, settings: u.t.GameplaySettings["render"]): PhaserGraphic;
+	abstract clearGraphic(): void;
+	abstract drawGraphic(scene: Scene, settings: u.t.GameplaySettings["render"]): void;
 
 	draw(scene: Scene, settings: u.t.GameplaySettings["render"]): this {
-		this.graphic = this.createGraphic(scene, settings);
-		return this
+		if(this.graphic === undefined) {
+			this.graphic = this.initialGraphic(scene, settings);
+		} else {
+			this.clearGraphic();
+		}
+		this.drawGraphic(scene, settings);
+
+		return this;
 	}
 
 	get end_time() {

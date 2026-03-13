@@ -1,4 +1,5 @@
 import { Beat } from "./gameobjects/Beat"
+import { Entity } from "./gameobjects/Entities/Entity"
 import { Note } from "./gameobjects/Entities/Note"
 
 export type Character = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" |
@@ -38,13 +39,14 @@ export type EventTable = {
 	SCORE_CHANGED: [number],
 	JUDGMENT_MADE: [Judgment],
 	// Charting
-	NOTE_CREATED: [Note, Beat],
+	ENTITY_CREATED: [Entity, Beat],
+	ENTITY_DELETED: [Entity],
 	HOLD_CREATED: [Note],
-	NOTE_DELETED: [Note],
 	PLAYBACK_START: [number],
 	PLAYBACK_STOP: [],
 	SONG_PATH_CHANGED: [string],
-	SWITCH_CHART: [number]
+	SWITCH_CHART: [number],
+	TIMINGS_RECALCULATED: [Beat]
 }
 
 export type Event = keyof EventTable

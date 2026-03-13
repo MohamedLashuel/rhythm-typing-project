@@ -64,8 +64,13 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	// -----------------------------------------------
 
 	addEntity(entity: Entity) {
-		if(entity.graphic === undefined) entity.draw(this.scene, this.settings);
+		entity.draw(this.scene, this.settings);
 		this.entity_container.add(entity.graphic);
+	}
+
+	redraw(entity: Entity) {
+		this.entity_container.remove(entity.graphic);
+		this.addEntity(entity);
 	}
 
 	scrollToTime(time: number){
@@ -84,8 +89,11 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	}
 
 	moveActiveEntities(): void {
-		this.active_entities.forEach(e => 
-			e.graphic.x = (e.timing.scroll_pos - this.scroll_position) * this.current_scroll_speed);
+		this.active_entities.forEach(e => this.moveEntity(e));
+	}
+
+	moveEntity(e: Entity): void { 
+		e.graphic.x = (e.timing.scroll_pos - this.scroll_position) * this.settings.base_scroll_speed;
 	}
 
 	setBaseScrollSpeed(speed: number): void {
@@ -99,24 +107,20 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	// HELPERS
 	// -----------------------------------------------
 
-	get current_scroll_speed(): number {
-		return this.settings.base_scroll_speed * this.current_scroll_mod;
-	}
-
 	// The scroll position of the start of the track where entities appear from
 	// Derived by solving for scroll position in the formula for entity x 
 	get track_start_pos(): number {
-		return g.WIDTH / this.current_scroll_speed + this.scroll_position;
+		return g.WIDTH / this.settings.base_scroll_speed + this.scroll_position;
 	}
 
 	get track_end_pos(): number {
-		return this.x / this.current_scroll_speed + this.scroll_position;
+		return this.x / this.settings.base_scroll_speed + this.scroll_position;
 	}
 
 	// Correctly returns negative time if the entity is past pos
 	timeUntilEntityReachesPos(entity: Entity, pos: number, count_from_end: boolean): number {
 		const entity_pos = count_from_end ? entity.end_pos : entity.timing.scroll_pos;
-		return (entity_pos - pos)/this.current_scroll_mod;
+		return entity_pos - pos;
 	}
 	
 	willEntityAppearSoon(entity: Entity){

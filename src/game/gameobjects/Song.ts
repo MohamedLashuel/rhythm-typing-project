@@ -4,6 +4,7 @@ import BTree from 'sorted-btree';
 import * as u from '../utils';
 import * as c from '../config';
 import { EntityGroup, entityGroupfromGroupSpec, EntityGroupSpec } from './Entities/EntityGroup';
+import { ScrollZone } from './Entities/ScrollZone';
 
 export class Song {
 	constructor(
@@ -27,7 +28,7 @@ export type ScrollChange = {
 	total_distance: number;
 }
 
-export type BPMChange = {
+export type BpmChange = {
 	bpm: number,
 	total_time: number
 }
@@ -35,7 +36,7 @@ export type BPMChange = {
 export type EntityMap = u.GroupTree<Beat, EntityGroup>;
 export type EntityMapEntry = [Beat, Partial<EntityGroup>];
 export type ScrollEntry = [number, ScrollChange]
-export type BPMEntry = [Beat, BPMChange];
+export type BpmEntry = [Beat, BpmChange];
 
 export type EntitySpecMap = u.GroupTree<Beat, EntityGroupSpec>
 
@@ -44,7 +45,7 @@ export class Chart {
 		public author: string = "",
 		// Indexed by time
 		public scroll_changes: BTree<number, ScrollChange> = new BTree(),
-		public bpms: BTree<Beat, BPMChange> = new BTree(),
+		public bpms: BTree<Beat, BpmChange> = new BTree(undefined, Beat.compare),
 		public entity_specs: EntitySpecMap = new u.GroupTree(Beat.compare),
 		// Offset is used solely to play audio
 		// "Playback time" in other objects does not include offset
@@ -57,7 +58,7 @@ export class Chart {
 	// -----------------------------------------------
 
 	static defaultScrollEntry: ScrollEntry = [0, { mult: 1, total_distance: 0 }];
-	defaultBPMEntry(): BPMEntry {
+	defaultBPMEntry(): BpmEntry {
 		return [ Beat.ZERO_BEAT(), { bpm: this.initial_bpm, total_time: 0 }]
 	}
 
@@ -80,7 +81,7 @@ export class Chart {
 		return this.scroll_changes.getPairOrNextLower(time) ?? Chart.defaultScrollEntry
 	}
 
-	mostRecentBPMEntryFrom(beat: Beat): BPMEntry {
+	mostRecentBPMEntryFrom(beat: Beat): BpmEntry {
 		return this.bpms.getPairOrNextLower(beat) ?? this.defaultBPMEntry()
 	}
 
@@ -89,9 +90,52 @@ export class Chart {
 		return entry[1].total_distance + (time - entry[0]) * entry[1].mult;
 	}
 	// Ditto for this one
-	hitTimeUsingBPMEntry(beat: Beat, entry: BPMEntry){
+	hitTimeUsingBPMEntry(beat: Beat, entry: BpmEntry){
 		return entry[1].total_time 
 			+ Beat.beatsToSeconds(beat.toDecimal() - entry[0].toDecimal(), entry[1].bpm);
+	}
+
+	// -----------------------------------------------
+	// CHANGING TIMINGS
+	// -----------------------------------------------
+
+	addBpmChange(beat: Beat, bpm: number) {
+		this.bpms.set(beat, { total_time: this.calculateHitTime(beat), bpm: bpm });
+		this.recalculateBpmEntries(beat);
+	}
+
+	removeBpmChange(beat: Beat) {
+		this.bpms.delete(beat);
+		this.recalculateBpmEntries(beat);
+	}
+
+	addScrollZone(zone: ScrollZone) {
+		const previous_entry = this.mostRecentScrollEntryFrom(zone.timing.time);
+		this.scroll_changes.set(zone.timing.time, 
+			{ mult: zone.mult, total_distance: this.calculateScrollPosition(zone.timing.time) }
+		);
+		this.scroll_changes.set(zone.end_time, 
+			{ mult: previous_entry[1].mult, total_distance: this.calculateScrollPosition(zone.end_time) }
+		);
+		this.recalculateScrollEntries(zone.end_timing.beat);
+	}
+
+	// Used to recalc timings when BPM or scroll speed is changed at some point in the chart
+	// from_beat is where the change happened. I should only be processing notes after from_beat to make
+	// this faster, but I can figure it out later if I need to. (Same for the other recalculate functions)
+	recalculateEntityTimings(entity_map: EntityMap, _from_beat: Beat): void {
+		entity_map.forEachProp((v, b) => {
+			v.timing = this.calculateBeatTiming(b);
+			if(v.end_timing !== undefined) v.end_timing = this.calculateBeatTiming(v.end_timing.beat); 
+		});
+	}
+
+	recalculateBpmEntries(_beat: Beat): void {
+		this.bpms.mapValues((v, b) => v.total_time = this.calculateHitTime(b));
+	}
+
+	recalculateScrollEntries(_beat: Beat): void {
+		this.scroll_changes.mapValues((v, b) => v.total_distance = this.calculateScrollPosition(b));
 	}
 
 	// -----------------------------------------------
@@ -134,7 +178,7 @@ export class Chart {
 		if(k === "scroll_changes"){
 			return new BTree(v);
 		} else if (k === "bpms") {
-			return new BTree(v.map( ([b, n]: [any, any]) => [Beat.fromJSON(b), n]));
+			return new BTree(v.map( ([b, n]: [any, any]) => [Beat.fromJSON(b), n]), Beat.compare);
 		} else if (k === "entity_specs"){
 			return new u.GroupTree(Beat.compare, v.map( ([b, n]: [any, any]) => [Beat.fromJSON(b), n]));
 		} else {

@@ -15,7 +15,6 @@ export class GameplayNoteField {
 	constructor(scene: Scene, chart: Chart, settings: u.t.GameplaySettings, 
 			keyboard: KeyboardManager, pt: u.t.Point) {
 		const entities = chart.createEntityMap().valuesArray();
-		console.log(entities);
 		const notes = entities.map(e => e.note).filter(v => v !== undefined);
 
 		this.logic = new GameplayLogic(notes);

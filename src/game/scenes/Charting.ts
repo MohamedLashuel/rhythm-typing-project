@@ -36,13 +36,13 @@ export class Charting extends Scene
         // This isn't needed for the game scene, but it is needed here. No clue why.
         this.add.existing(this.manager.note_field.renderer);
 
-        this.debug_text = this.add.text(10, 700, "", g.NOTE_STYLE);
+        this.debug_text = this.add.text(10, 700, "");
         
     }
 
     update (_time: number, delta_ms: number)
     {
-        this.updateDebug(this.manager.note_field.renderer.active_entities.length);
+        this.updateDebug(JSON.stringify(this.manager.note_field.renderer.entities));
         this.manager.myUpdate(delta_ms);
     }
 

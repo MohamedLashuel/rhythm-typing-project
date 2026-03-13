@@ -18,8 +18,16 @@ export class Note extends Entity {
 		this.chars = chars;
 	}
 
-	override createGraphic(scene: Scene, settings: u.t.GameplaySettings["render"]): NoteContainer {
-		return new NoteContainer(scene, settings, this.chars, this.timing, this.end_timing);
+	override initialGraphic(scene: Scene, _settings: u.t.GameplaySettings["render"]): NoteContainer {
+		return new NoteContainer(scene);
+	}
+
+	override clearGraphic(): void {
+		this.graphic.removeAll(true);
+	}
+
+	override drawGraphic(_scene: Scene, settings: u.t.GameplaySettings['render']): void {
+		this.graphic.setup(settings, this.chars, this.timing, this.end_timing);
 	}
 
 	isHold(): this is { hold_timing: Timing } {
@@ -55,9 +63,12 @@ export class Note extends Entity {
 
 class NoteContainer extends GameObjects.Container {
 	num_chars: number;
-	constructor(scene: Scene, settings: u.t.GameplaySettings["render"], chars: u.t.Character[], 
-			timing: Timing, end_timing?: Timing) {
+	constructor(scene: Scene) {
 		super(scene);
+	}
+
+	setup(settings: u.t.GameplaySettings["render"], chars: u.t.Character[], 
+			timing: Timing, end_timing?: Timing) {
 		this.num_chars = chars.length;
 		
 		const y_offsets = this.getYOffsets();

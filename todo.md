@@ -1,7 +1,6 @@
 FOR NEXT RELEASE:
 - Main menu
 - Results screen
-- Charting screens: Chart properties, song properties, display controls, chart list, gameplay settings
 - Song select
 - Gameplay settings
 
@@ -12,7 +11,6 @@ MISSING FEATURES:
 - Charting:
 	- Change playback rate
 	- Move receptor
-	- BPM/scroll changes
 
 NICE TO HAVE:
 - Decrease lag
@@ -20,8 +18,7 @@ NICE TO HAVE:
 - Autoplay
 - Arrowvortex timing algorithm
 - Beat lines
-- Pause gimmicks
-- Visual gimmicks which move note field (e.g. beat from ITG)
+- More gimmicks
 - Two modes of charting playback: Snap back to start OR keep position
 - Group select in charting
 - Undo/redo in charting

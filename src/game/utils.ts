@@ -141,7 +141,7 @@ export function clamp(x: number, min: number, max: number){
 }
 
 export function clampedIndex<T>(i: number, ary: readonly T[]): T {
-	return ary[clamp(i, 0, ary.length)] as T
+	return ary[clamp(i, 0, ary.length - 1)] as T
 }
 
 export function range(first: number, second?: number, step: number = 1){
@@ -207,6 +207,10 @@ export class GroupTree<K, V extends {}> extends BTree<K, Partial<V>> {
 		if(isObjectEmpty(result)) this.delete(key);
 	}
 
+	existsProp<P extends keyof V>(key: K, prop: P): boolean {
+		return this.getProp(key, prop) !== undefined;
+	}
+
 	map<R extends {}>(fun: (v: Partial<V>, k: K, i: number) => Partial<R>): GroupTree<K, R>{
 		const new_entries = this.mapValues(fun).toArray();
 		return new GroupTree<K, R>(this.compare, new_entries);
@@ -214,6 +218,10 @@ export class GroupTree<K, V extends {}> extends BTree<K, Partial<V>> {
 
 	mapProps<R extends {}>(fun: (v: V[keyof V], k: K) => R): GroupTree<K, Record<keyof V, R>> {
 		return this.map( (group, key) => mapObject(group, val => fun(val, key)));
+	}
+
+	forEachProp(fun: (v: V[keyof V], k: K) => any): void {
+		this.forEachPair( (key, group) => mapObject(group, val => fun(val, key)));
 	}
 }
 
