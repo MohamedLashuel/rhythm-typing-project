@@ -29,6 +29,16 @@ export type ClassProperties<C> = keyof {
 
 export type JSONfied<C> = Record<ClassProperties<C>, any>
 
+export type RemapLeaves<Base, To> = {
+	[Property in keyof Base]: Base[Property] extends Record<string, unknown> 
+		? RemapLeaves<Base[Property], To> 
+		: To
+};
+
+export type RecursiveContainer<T> = {
+	[index: string]:  T | RecursiveContainer<T>
+}
+
 // An undefined window means one you can't hit normally
 export type Judgment = {window: number | undefined, name: string, points: number}
 

@@ -62,7 +62,7 @@ abstract class Screen extends GameObjects.Container {
 			new GameObjects.Rectangle(scene, 0, 0, g.WIDTH, g.HEIGHT, g.CHARTING_SCREEN_BG_COLOR)
 				.setOrigin(0)
 		);
-		this.setDepth(10).deactivate();
+		this.setDepth(g.DEPTHS.charting_screen).deactivate();
 	}
 
 	// Screens use different data, so just pass in the whole manager

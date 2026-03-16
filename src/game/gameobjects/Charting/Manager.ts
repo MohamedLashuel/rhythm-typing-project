@@ -1,24 +1,28 @@
 import { ChartingNoteField } from "./NoteField";
 import { SoundManager } from "../Sound";
 import * as u from '../../utils';
+import * as c from '../../config';
 import { Scene } from "phaser";
 import { SCREEN_TYPES, ScreenManager } from "./Screens";
 import { Song } from "../Song";
 import { KeyboardManager } from "../KeyboardManager";
+import { SettingsTab } from "./Settings";
 
 export class ChartingManager {
 	note_field: ChartingNoteField;
 	screens: ScreenManager;
 	sound: SoundManager;
 	keyboard: KeyboardManager;
+	settings_tab: SettingsTab;
 
 	constructor(scene: Scene, field_loc: u.t.Point, initial_song?: Song){
 		const song = initial_song ?? new Song();
 		const initial_chart = song.charts[0];
-		const settings = u.DEFAULT_SETTINGS;
+		const settings = c.DEFAULT_SETTINGS;
 		this.note_field = new ChartingNoteField(scene, field_loc, song, initial_chart, settings);
 		this.sound = new SoundManager(scene, settings.sound);
 		this.screens = new ScreenManager(scene, song, 0);
+		this.settings_tab = new SettingsTab(scene);
 		this.keyboard = new KeyboardManager();
 
 		this.note_field.emitter.addListeners(

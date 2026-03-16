@@ -21,12 +21,17 @@ export function objectWithout<T extends Record<string, any>, K extends string>(o
   return obj;
 }
 
-export function mapObject<K extends PropertyKey, V, R>(obj: Partial<Record<K, V>>, fun: (v: V, k: K) => R )
+export function mapObject<K extends string, V, R>(obj: Partial<Record<K, V>>, fun: (v: V, k: K) => R )
 : Record<K, R>{
 	const entries = Object.entries(obj) as [K, V][];
 	const new_entries = entries.map( ([k, v]) => [k, fun(v, k)]);
 	return Object.fromEntries(new_entries);
 }
+
+export function objectForEach<K extends string, V>(obj: Record<K, V>, fun: (v: V, k: K) => void): void {
+	(Object.entries(obj) as [K, V][]).forEach( ([k, v]) => fun(v, k) );
+}
+
 
 export function isObjectEmpty(obj: any){
 	for (const key in obj) if (Object.hasOwn(obj, key)) return false;
@@ -222,14 +227,5 @@ export class GroupTree<K, V extends {}> extends BTree<K, Partial<V>> {
 
 	forEachProp(fun: (v: V[keyof V], k: K) => any): void {
 		this.forEachPair( (key, group) => mapObject(group, val => fun(val, key)));
-	}
-}
-
-export const DEFAULT_SETTINGS: t.GameplaySettings = {
-	render: {
-		base_scroll_speed: 600
-	},
-	sound: {
-		music_rate: 1
 	}
 }

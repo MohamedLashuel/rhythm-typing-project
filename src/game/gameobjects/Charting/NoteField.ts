@@ -3,6 +3,7 @@ import * as u from '../../utils'
 import * as du from '../../domutils'
 import * as c from '../../config'
 import * as g from '../../graphics'
+import * as actions from './Actions'
 import { Entity } from '../Entities/Entity';
 import { Beat } from '../Beat';
 import { EntityMap, Chart, EntityMapEntry, Song } from "../Song"
@@ -11,9 +12,12 @@ import { Note } from '../Entities/Note';
 import { BpmMarker } from '../Entities/BpmMarker';
 import InputText from 'phaser3-rex-plugins/plugins/inputtext';
 import { ScrollZone } from '../Entities/ScrollZone';
+import { EntityGroup, EntityKey } from '../Entities/EntityGroup';
 
 type Cursor = { position: Beat, increment: c.ValidDivision }
 const DEFAULT_CURSOR: Readonly<Cursor> = { position: Beat.ZERO_BEAT(), increment: 4 }
+
+type NumberRequester = (fun: (x: number) => void, def: number) => void;
 
 export class ChartingNoteField {
 	logic: ChartingLogic;
@@ -24,7 +28,7 @@ export class ChartingNoteField {
 	playback_time: number = 0;
 	currently_playing: boolean = false;
 	emitter: u.MyEmitter = new u.MyEmitter();
-	held?: { beat: Beat, note: Note }
+	action_queue: actions.ChartingActionWithData<any>[] = [];
 
 	constructor(scene: Scene, pt: u.t.Point, song: Song, initial_chart: Chart, 
 			settings: u.t.GameplaySettings){
@@ -64,7 +68,7 @@ export class ChartingNoteField {
 			return;
 		}
 		if(u.isChar(event.key)){
-			this.logic.placeOrRemoveChar(event.key);
+			this.performAction(actions.placeOrRemoveChar, { beat: this.cursor.position, char: event.key});
 		} else {
 			const funTable: Record<string, () => void> = {
 				ArrowLeft: () => this.moveCursorBy(this.cursor.increment, "backward"),
@@ -81,9 +85,8 @@ export class ChartingNoteField {
 
 	processCtrlCommand(event: KeyboardEvent): void {
 		const funTable: Record<string, () => void> = {
-			"b": () => this.logic.placeOrRemoveBpmChange(
-				(callback, def) => this.renderer.requestNumber(callback, def)
-			),
+			"b": () => this.placeOrRemoveBpmChange(this.cursor.position),
+			"u": () => this.undoLastAction(),
 			"z": () => this.logic.placeScrollZonePoint(this.cursor.position,
 				(callback, def) => this.renderer.requestNumber(callback, def)
 			),
@@ -101,6 +104,17 @@ export class ChartingNoteField {
 	// -----------------------------------------------
 	// ACTIONS
 	// -----------------------------------------------
+
+	performAction<E, U>(action: actions.ChartingAction<E, U>, data: E): void {
+		const undo_data = action.execute(this, data);
+		this.action_queue.push( { action: action, undo_data: undo_data, redo_data: data });
+	}
+
+	undoLastAction(): void {
+		const result = this.action_queue.pop();
+		if(result === undefined) return;
+		result.action.undo(this, result.undo_data);
+	}
 
 	downloadSong(): void {
 		this.saveCurrentChart();
@@ -156,6 +170,17 @@ export class ChartingNoteField {
 		this.logic.entities = entities;
 	}
 
+	placeOrRemoveBpmChange(beat: Beat): void {
+		const existing_marker = this.logic.entities.getProp(beat, "bpm_marker");
+		if(existing_marker === undefined){
+			this.renderer.requestNumber(x => {
+				this.performAction(actions.placeBpmChange, { beat: beat, bpm: x});
+			}, c.DEFAULT_BPM);
+		} else {
+			this.performAction(actions.removeBpmChange, { beat: beat, marker: existing_marker })
+		}
+	}
+
 	// -----------------------------------------------
 	// HELPERS
 	// -----------------------------------------------
@@ -194,52 +219,40 @@ class ChartingLogic {
 		public chart: Chart,
 		public entities: EntityMap){}
 
-	placeOrRemoveChar(char: u.t.Character){
-		const existing_note = this.entities.getProp(this.cursor.position, "note");
+	placeOrRemoveChar(beat: Beat, char: u.t.Character){
+		const existing_note = this.entities.getProp(beat, "note");
 		const new_chars = (existing_note === undefined) ? [char] 
-			: u.toggleInclusion(existing_note.chars, char)
+			: u.toggleInclusion(existing_note.chars, char);
 
-		if(new_chars.length === 0){
-			this.entities.deleteProp(this.cursor.position, "note");
-		} else {
-			const new_note = new Note(new_chars, this.chart.calculateBeatTiming(this.cursor.position));
-			this.entities.setProp(this.cursor.position, "note", new_note);
-			this.emitter.emit("ENTITY_CREATED", [new_note, this.cursor.position]);
-			this.held = { beat: this.cursor.position, note: new_note };
-		}
-		if(existing_note !== undefined) this.emitter.emit("ENTITY_DELETED", [existing_note]);
+		if(existing_note !== undefined) this.deleteEntity(beat, "note", existing_note);
+
+		const new_note = new Note(new_chars, this.chart.calculateBeatTiming(beat));
+		this.createEntity(beat, "note", new_note);
+		this.held = { beat: beat, note: new_note };
 	}
 
 	deleteNoteAt(beat: Beat){
 		const existing_note = this.entities.getProp(beat, "note");
-		if(existing_note !== undefined){
-			this.entities.deleteProp(beat, "note");
-			this.emitter.emit("ENTITY_DELETED", [existing_note]);
-		}
+		if(existing_note !== undefined) this.deleteEntity(beat, "note", existing_note);
 	}
 
-	placeOrRemoveBpmChange(requester: (fun: (x: number) => void, def: number) => void) {
-		const existing_change = this.entities.getProp(this.cursor.position, "bpm_marker")
-		if(existing_change !== undefined){
-			// Delete case
-			this.entities.deleteProp(this.cursor.position, "bpm_marker");
-			this.emitter.emit("ENTITY_DELETED", [existing_change]);
-			this.chart.removeBpmChange(this.cursor.position);
-		} else {
-			// Create case
-			requester(new_bpm => {
-				if(new_bpm <= 0) return;
-				const marker = new BpmMarker(this.chart.calculateBeatTiming(this.cursor.position), new_bpm);
-				this.entities.setProp(this.cursor.position, "bpm_marker", marker);
-				this.emitter.emit("ENTITY_CREATED", [marker, this.cursor.position]);
-				this.chart.addBpmChange(this.cursor.position, new_bpm);
-			}, c.DEFAULT_BPM);
-		}
-		this.chart.recalculateEntityTimings(this.entities, this.cursor.position);
-		this.emitter.emit("TIMINGS_RECALCULATED", [this.cursor.position]);
+	placeBpmChange(beat: Beat, bpm: number): BpmMarker {
+		const marker = new BpmMarker(this.chart.calculateBeatTiming(beat), bpm);
+		this.createEntity(beat, "bpm_marker", marker);
+		this.chart.addBpmChange(beat, bpm);
+		this.recalculateTimings(beat);
+		return marker;
 	}
 
-	placeScrollZonePoint(beat: Beat, requester: (fun: (x: number) => void, def: number) => void){
+	// Returns BPM of the deleted change
+	removeBpmChange(beat: Beat, marker: BpmMarker): number {
+		this.deleteEntity(beat, "bpm_marker", marker);
+		this.chart.removeBpmChange(beat);
+		this.recalculateTimings(beat);
+		return marker.bpm;
+	}
+
+	placeScrollZonePoint(beat: Beat, requester: NumberRequester){
 		if(this.zone_point === undefined){
 			// Setting first point
 			this.zone_point = beat;
@@ -251,14 +264,28 @@ class ChartingLogic {
 			requester(mult => {
 				const zone = new ScrollZone(this.chart.calculateBeatTiming(smaller),
 					this.chart.calculateBeatTiming(larger), mult);
-				this.entities.setProp(smaller, "scroll_zone", zone);
-				this.emitter.emit("ENTITY_CREATED", [zone, beat]);
+				this.createEntity(smaller, "scroll_zone", zone);
 				this.chart.addScrollZone(zone);
-				this.chart.recalculateEntityTimings(this.entities, beat);
-				this.emitter.emit("TIMINGS_RECALCULATED", [beat]);
+				this.recalculateTimings(beat);
 			}, 1)
 			this.zone_point = undefined;
 		}
+
+	}
+
+	createEntity<P extends EntityKey>(beat: Beat, prop: P, ent: EntityGroup[P]) {
+		this.entities.setProp(beat, prop, ent);
+		this.emitter.emit("ENTITY_CREATED", [ent, beat]);
+	}
+
+	deleteEntity<P extends EntityKey>(beat: Beat, prop: P, ent: EntityGroup[P]) {
+		this.entities.deleteProp(beat, prop);
+		this.emitter.emit("ENTITY_DELETED", [ent]);
+	}
+
+	recalculateTimings(beat: Beat) {
+		this.chart.recalculateEntityTimings(this.entities, beat);
+		this.emitter.emit("TIMINGS_RECALCULATED", [beat]);
 	}
 
 	handleKeyUp(event: KeyboardEvent){

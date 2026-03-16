@@ -23,6 +23,15 @@ export const SCORE_TWEEN_SPEED = 400
 export const INFO_TEXT_Y = 200
 export const CHARTING_SCREEN_BG_COLOR = 0x220066
 
+export const DEPTHS = {
+    settings_sidebar: 1,
+    settings_elements: 2,
+    charting_screen: 3
+}
+
+// Settings
+export const SETTINGS_WIDTH_PCT = 40;
+
 // Text styles
 export const NOTE_STYLE = {
     fontFamily: 'note_font', 
@@ -48,14 +57,7 @@ export const SCORE_STYLE = {
     align: 'center'
 } satisfies Partial<Phaser.GameObjects.TextStyle>;
 
-export const JUDGMENT_STYLE = {
-    fontFamily: 'note_font', 
-    fontSize: 48,
-    color: '#ffffff',
-    stroke: '#000000',
-    strokeThickness: 4,
-    align: 'center'
-} satisfies Partial<Phaser.GameObjects.TextStyle>;
+export const JUDGMENT_STYLE = NOTE_STYLE;
 
 // Entity styles
 export const SPEED_ZONE_COLOR = 0xff8000;

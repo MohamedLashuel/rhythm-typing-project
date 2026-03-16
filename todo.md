@@ -5,12 +5,10 @@ FOR NEXT RELEASE:
 - Gameplay settings
 
 MISSING FEATURES:
-- Gameplay:
-	- Visualize bpm changes/scroll changes
-
 - Charting:
 	- Change playback rate
 	- Move receptor
+	- Group select and undo/redo in charting
 
 NICE TO HAVE:
 - Decrease lag
@@ -20,5 +18,7 @@ NICE TO HAVE:
 - Beat lines
 - More gimmicks
 - Two modes of charting playback: Snap back to start OR keep position
-- Group select in charting
-- Undo/redo in charting
+
+CODE TASKS (low-priority):
+- Use improvements from GroupTree to make an extension of BTree
+- See if a library can replace functional helpers in utils

@@ -14,7 +14,7 @@ const PROTO_TABLE: Record<EntityKey, new (...args: any[]) => Entity> = {
 	"scroll_zone": ScrollZone
 };
 
-type EntityKey = keyof EntityGroup;
+export type EntityKey = keyof EntityGroup;
 export type EntityGroupSpec = Partial<Record<EntityKey, any>>;
 
 // Chart needs to be passed in to calculate end timing for each entity

@@ -22,3 +22,12 @@ export type ValidDivision = typeof VALID_DIVISIONS[number];
 export function isValidDivision(x: number): x is ValidDivision {
 	return VALID_DIVISIONS.includes(x as ValidDivision);
 }
+
+export const DEFAULT_SETTINGS: t.GameplaySettings = {
+	render: {
+		base_scroll_speed: 600
+	},
+	sound: {
+		music_rate: 1
+	}
+}
