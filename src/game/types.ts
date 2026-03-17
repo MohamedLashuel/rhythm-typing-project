@@ -1,6 +1,7 @@
 import { Beat } from "./gameobjects/Beat"
 import { Entity } from "./gameobjects/Entities/Entity"
 import { Note } from "./gameobjects/Entities/Note"
+import { Chart, Song } from "./gameobjects/Song"
 
 export type Character = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" |
 "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | 
@@ -90,3 +91,5 @@ export type GameplaySettings = {
 		music_rate: number
 	}
 }
+
+export type ResultsData = { song: Song, chart: Chart, score: number, judgments: Judgment[] };

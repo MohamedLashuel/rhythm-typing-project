@@ -4,7 +4,7 @@ import * as c from '../config';
 import * as g from '../graphics';
 import { GameplayManager } from '../gameobjects/Gameplay/Manager';
 
-export class Game extends Scene
+export class Gameplay extends Scene
 {
     camera: Phaser.Cameras.Scene2D.Camera;
     manager: GameplayManager;
@@ -14,7 +14,7 @@ export class Game extends Scene
     chart_index: number;
 
     constructor () {
-        super('Game');
+        super('Gameplay');
     }
 
     init(data: { song: Song, chart_index: number }) {
@@ -48,6 +48,12 @@ export class Game extends Scene
     {
         this.manager.myUpdate();
         this.updateDebug();
+        if(this.manager.isComplete()){
+            this.manager.sound.stopPlayback();
+            const logic = this.manager.note_field.logic
+            this.scene.start('Results', { song: Song, chart: Chart, score: logic.score, 
+                judgments: logic.judgments } );
+        }
     }
 
     // Used to display values for debugging

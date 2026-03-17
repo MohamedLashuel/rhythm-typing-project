@@ -6,6 +6,7 @@ export class SoundManager {
 	scene: Scene;
 	settings: u.t.GameplaySettings["sound"];
 	song_instance?: u.t.SoundInstance
+	complete: boolean = false;
 
 	constructor(scene: Scene, settings: u.t.GameplaySettings["sound"]){
 		this.scene = scene;
@@ -15,6 +16,7 @@ export class SoundManager {
 
 	trySetSongInstance(): void {
 		this.song_instance = this.scene.cache.audio.exists("song") ? this.scene.sound.add("song") : undefined;
+		this.song_instance?.once("complete", () => this.complete = true);
 	}
 
 	changeSongPath(new_path: string) {

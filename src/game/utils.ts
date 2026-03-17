@@ -45,6 +45,12 @@ export function flatProperties<T>(ary: { [s: string]: T}[]) {
 	return ary.map(o => Object.values(o)).flat();
 }
 
+export function countStrings(ary: string[]): Record<string, number> {
+	const obj: Record<string, number> = {};
+	ary.forEach( s => (obj[s] === undefined) ? (obj[s] = 1) : obj[s]++)
+	return obj;
+}
+
 // Take elements from an array while a predicate function returns true
 export function takeWhile<T>(ary: T[], pred: (t: T) => boolean): T[] {
 	const end_index = ary.findIndex(t => !pred(t));
@@ -162,6 +168,13 @@ export function range(first: number, second?: number, step: number = 1){
 	}
 
 	return ary;
+}
+
+export function roundTo(x: number, step: number){
+	const round_up = Math.abs(x % step) >= step / 2;
+	const result = round_up ? x + (step - x % step) : x - (x % step);
+	// Cut off floating point errors
+	return Phaser.Math.RoundTo(result, -8)
 }
 
 // Emits Phaser events with automatic type checking

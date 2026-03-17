@@ -46,6 +46,7 @@ class GameplayLogic {
 	current_index: number = 0;
 	emitter: u.MyEmitter = new u.MyEmitter();
 	score: number = 0;
+	judgments: u.t.Judgment[] = [];
 
 	constructor(notes: Note[]){
 		this.notes = notes;
@@ -127,6 +128,10 @@ class GameplayLogic {
 		}
 	}
 
+	isComplete(): boolean {
+		return this.current_index >= this.notes.length;
+	}
+
 	// -----------------------------------------------
 	// SCORING
 	// -----------------------------------------------
@@ -135,8 +140,9 @@ class GameplayLogic {
 		const time_diff = Math.abs(cur_time - note.timing.time);
 		const judgment = c.JUDGMENTS.find(j => time_diff < (j.window ?? -1) );
 		u.shouldntBeUndefined(judgment, "While judging a hit, the hit was found to be a miss");
-		this.emitter.emit("JUDGMENT_MADE", [judgment ?? c.MISS_JUDGMENT]);
-		this.scoreJudgment(judgment ?? c.MISS_JUDGMENT);
+		this.judgments.push(judgment);
+		this.emitter.emit("JUDGMENT_MADE", [judgment]);
+		this.scoreJudgment(judgment);
 	}
 
 	scoreJudgment(judgment: u.t.Judgment){

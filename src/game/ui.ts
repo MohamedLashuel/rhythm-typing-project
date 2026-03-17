@@ -3,7 +3,7 @@ import ScrollablePanel from "phaser3-rex-plugins/templates/ui/scrollablepanel/Sc
 import Sizer from "phaser3-rex-plugins/templates/ui/sizer/Sizer";
 import * as u from './utils';
 import RoundRectangle from "phaser3-rex-plugins/plugins/roundrectangle";
-import Slider from "phaser3-rex-plugins/templates/ui/slider/Slider";
+import NumberBar from "phaser3-rex-plugins/templates/ui/numberbar/NumberBar";
 
 abstract class InputElement<T extends GameObjects.GameObject, V> {
 	element: T
@@ -144,7 +144,7 @@ type NumberSliderParams = {
 	step: number
 }
 
-export class NumberSlider extends InputElement<Slider, number> {
+export class NumberSlider extends InputElement<NumberBar, number> {
 	params: NumberSliderParams;
 	width_pct: number;
 	value: number;
@@ -156,7 +156,17 @@ export class NumberSlider extends InputElement<Slider, number> {
 	}
 
 	override create(scene: Scene, theme: SidebarTheme): void {
-		this.element = scene.rexUI.add.slider({
+		const icon = scene.rexUI.add.label({
+			width: 16,
+			height: 16,
+			background: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 10, theme.colors.primary)
+		})
+			.setInteractive()
+			.on('pointerdown', () => {
+				console.log("AAA")
+				this.element.value = this.realValToSliderVal(this.params.default)
+			})
+		this.element = scene.rexUI.add.numberBar({
 			anchor: {
 				width: `${this.width_pct}%`
 			},
@@ -164,26 +174,36 @@ export class NumberSlider extends InputElement<Slider, number> {
 				top: 5,
 				bottom: 15
 			},
-	        track: {
-	        	height: 2,
-	        	color: theme.colors.secondary
-	        },
-	        thumb: {
-	        	radius: 10,
-	        	color: theme.colors.primary
-	        },
-	        valuechangeCallback: () => {},
-	        gap: this.params.step / (this.params.max - this.params.min),
+			text: scene.add.text(0, 0, ""),
+			slider: {
+				track: {
+		        	height: 2,
+		        	color: theme.colors.secondary
+		        },
+		        thumb: {
+		        	radius: 10,
+		        	color: theme.colors.primary
+		        },
+		        input: 'drag'
+			},
+			icon: icon,
+	        valuechangeCallback: (val, _old_val, numberBar) => {
+                numberBar.text = this.sliderValToRealVal(val).toString();
+            },
 	    })
 	    	.setValue(this.params.default, this.params.min, this.params.max)
 		    .layout();
 	}
 
-	sliderValToRealValue(val: number): number {
-		return Math.round(val * (this.params.max - this.params.min) + this.params.min)
+	sliderValToRealVal(val: number): number {
+		return u.roundTo(val * (this.params.max - this.params.min) + this.params.min, this.params.step)
+	}
+
+	realValToSliderVal(val: number): number {
+		return (val - this.params.min) / (this.params.max - this.params.min);
 	}
 
 	override getValue(): number {
-		return this.sliderValToRealValue(this.element.value);
+		return this.sliderValToRealVal(this.element.value);
 	}
 }

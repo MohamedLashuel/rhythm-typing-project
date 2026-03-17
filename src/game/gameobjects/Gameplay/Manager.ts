@@ -28,4 +28,8 @@ export class GameplayManager {
 	}
 
 	myUpdate(){ this.note_field.myUpdate(this.sound.song_playback_time); }
+
+	isComplete(): boolean {
+		return this.note_field.logic.isComplete() //&& this.sound.complete;
+	}
 }

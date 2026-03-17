@@ -26,7 +26,7 @@ export class MainMenu extends Scene
 
         this.input.once('pointerdown', () => {
             const song = Song.fromJSON(song_json);
-            this.scene.start('Game', { song: song, chart_index: 0 });
+            this.scene.start('Gameplay', { song: song, chart_index: 0 });
         });
 
         this.input?.keyboard?.addKey('c').on("down", () => {

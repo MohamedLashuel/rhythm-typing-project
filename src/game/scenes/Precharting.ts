@@ -1,6 +1,5 @@
 import { OpenFileChooser } from 'phaser3-rex-plugins/plugins/filechooser';
 import { Scene } from 'phaser';
-import '../gameobjects/Gameplay/NoteField'
 import { Song } from '../gameobjects/Song';
 
 export class Precharting extends Scene

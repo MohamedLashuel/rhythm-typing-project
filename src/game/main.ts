@@ -1,6 +1,6 @@
 import { Boot } from './scenes/Boot';
-import { GameOver } from './scenes/GameOver';
-import { Game as MainGame } from './scenes/Game';
+import { Gameplay } from './scenes/Gameplay';
+import { Results } from './scenes/Results';
 import { Charting } from './scenes/Charting'
 import { Precharting } from './scenes/Precharting'
 import { MainMenu } from './scenes/MainMenu';
@@ -24,10 +24,10 @@ const config: Phaser.Types.Core.GameConfig = {
         Boot,
         Preloader,
         MainMenu,
-        MainGame,
+        Gameplay,
+        Results,
         Charting,
-        Precharting,
-        GameOver
+        Precharting
     ],
     plugins: {
         scene: [{
