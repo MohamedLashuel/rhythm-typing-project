@@ -21,15 +21,18 @@ export function objectWithout<T extends Record<string, any>, K extends string>(o
   return obj;
 }
 
-export function mapObject<K extends string, V, R>(obj: Partial<Record<K, V>>, fun: (v: V, k: K) => R )
-: Record<K, R>{
-	const entries = Object.entries(obj) as [K, V][];
+// UnionKeys and UnionValues support passing in object unions as well, which is necessary
+// dealing with nested objects
+export function mapObject<T extends {}, R>(obj: T, fun: (v: t.UnionValues<T>, k: t.UnionKeys<T>) => R )
+: { [P in t.UnionKeys<T>]: R }{
+	const entries = Object.entries(obj) as [t.UnionKeys<T>, t.UnionValues<T>][];
 	const new_entries = entries.map( ([k, v]) => [k, fun(v, k)]);
 	return Object.fromEntries(new_entries);
 }
 
-export function objectForEach<K extends string, V>(obj: Record<K, V>, fun: (v: V, k: K) => void): void {
-	(Object.entries(obj) as [K, V][]).forEach( ([k, v]) => fun(v, k) );
+export function objectForEach<T extends {}>(obj: T, fun: (v: t.UnionValues<T>, k: t.UnionKeys<T>) => void)
+: void {
+	(Object.entries(obj) as [t.UnionKeys<T>, t.UnionValues<T>][]).forEach( ([k, v]) => fun(v, k) );
 }
 
 
@@ -221,11 +224,17 @@ export class GroupTree<K, V extends {}> extends BTree<K, Partial<V>> {
 		return new GroupTree<K, R>(this.compare, new_entries);
 	}
 
-	mapProps<R extends {}>(fun: (v: V[keyof V], k: K) => R): GroupTree<K, Record<keyof V, R>> {
-		return this.map( (group, key) => mapObject(group, val => fun(val, key)));
+	mapProps<R>(fun: (v: V[keyof V], k: K) => R): GroupTree<K, { [P in t.UnionKeys<Partial<V>>]: R }> {
+		return this.map<{ [P in t.UnionKeys<Partial<V>>]: R }>( (group, key) => mapObject(group, val => {
+			if(val === undefined) return undefined;
+			return fun(val, key)
+		}))
 	}
 
 	forEachProp(fun: (v: V[keyof V], k: K) => any): void {
-		this.forEachPair( (key, group) => mapObject(group, val => fun(val, key)));
+		this.forEachPair( (key, group) => mapObject(group, val => {
+			if(val === undefined) return;
+			fun(val, key)
+		}));
 	}
 }

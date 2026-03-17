@@ -55,6 +55,10 @@ export class ChartingNoteField {
 		}
 	}
 
+	updateSettings(settings: u.t.GameplaySettings) {
+		this.renderer.settings = settings.render;
+	}
+
 	// -----------------------------------------------
 	// KEYBOARD PROCESSING
 	// -----------------------------------------------

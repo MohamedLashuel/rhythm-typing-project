@@ -48,6 +48,10 @@ export class SoundManager {
 		this.scene.sound.stopByKey("song");
 	}
 
+	updateSettings(settings: u.t.GameplaySettings): void {
+		this.settings = settings.sound;
+	}
+
 	// If playback time should be negative (because of negative offset), this returns 0
 	// Might be a problem later, but I can't find a better way
 	get song_playback_time(): number {

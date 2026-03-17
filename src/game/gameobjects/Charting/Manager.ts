@@ -33,6 +33,10 @@ export class ChartingManager {
 			{event: "SONG_PATH_CHANGED", fun: this.sound.changeSongPath, context: this.sound},
 			{event: "SWITCH_CHART", fun: this.note_field.changeChartIndex, context: this.note_field}
 		);
+		this.settings_tab.emitter.addListeners(
+			{event: "SETTINGS_CHANGED", fun: this.note_field.updateSettings, context: this.note_field},
+			{event: "SETTINGS_CHANGED", fun: this.sound.updateSettings, context: this.sound}
+		)
 	}
 
 	processKeyUpEvent(event: KeyboardEvent){ 
@@ -44,11 +48,17 @@ export class ChartingManager {
 			const screen_type = SCREEN_TYPES[Number(event.key) - 1]
 			if(screen_type !== undefined) this.screens.toggleScreen(screen_type);
 		}
-		else if (!this.screens.isActive()) this.note_field.processKeyDownEvent(event); 
+		else if (event.ctrlKey && event.key === "e") this.toggleSettings()
+		else if (!this.screens.isActive() && !this.settings_tab.active) 
+			this.note_field.processKeyDownEvent(event); 
 	}
 
 	myUpdate(delta_ms: number){ 
 		this.note_field.myUpdate(delta_ms); 
 		this.keyboard.handleQueues(evt => this.processKeyDownEvent(evt), evt => this.processKeyUpEvent(evt))
+	}
+
+	toggleSettings(){
+		this.settings_tab.toggle();
 	}
 }

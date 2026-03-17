@@ -21,4 +21,3 @@ NICE TO HAVE:
 
 CODE TASKS (low-priority):
 - Use improvements from GroupTree to make an extension of BTree
-- See if a library can replace functional helpers in utils

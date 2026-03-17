@@ -36,8 +36,13 @@ export type RemapLeaves<Base, To> = {
 };
 
 export type RecursiveContainer<T> = {
-	[index: string]:  T | RecursiveContainer<T>
-}
+	[x: string]: RecursiveContainer<T> | T
+};
+
+export type UnionKeys<T> = T extends T ? keyof T : never;
+export type UnionValues<T> = T extends T ? T[keyof T] : never;
+
+export type Layer2Keys<T> = UnionKeys<T[keyof T]>;
 
 // An undefined window means one you can't hit normally
 export type Judgment = {window: number | undefined, name: string, points: number}
@@ -57,6 +62,8 @@ export type EventTable = {
 	SONG_PATH_CHANGED: [string],
 	SWITCH_CHART: [number],
 	TIMINGS_RECALCULATED: [Beat]
+	// Both
+	SETTINGS_CHANGED: [GameplaySettings]
 }
 
 export type Event = keyof EventTable

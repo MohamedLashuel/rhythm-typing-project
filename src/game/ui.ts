@@ -3,8 +3,19 @@ import ScrollablePanel from "phaser3-rex-plugins/templates/ui/scrollablepanel/Sc
 import Sizer from "phaser3-rex-plugins/templates/ui/sizer/Sizer";
 import * as u from './utils';
 import RoundRectangle from "phaser3-rex-plugins/plugins/roundrectangle";
+import Slider from "phaser3-rex-plugins/templates/ui/slider/Slider";
 
-export type SidebarSpec = Record<string, Record<string, GameObjects.GameObject>>
+abstract class InputElement<T extends GameObjects.GameObject, V> {
+	element: T
+
+	abstract create(scene: Scene, theme: SidebarTheme): void
+
+	// getValue might error if called before create is
+	abstract getValue(): V
+}
+type ValueTypeOfInputElement<T> = T extends InputElement<infer _T, infer V> ? V : never;
+
+export type SidebarSpec = Record<string, Record<string, InputElement<any,any>>>
 
 // Automatically generate the type definition for a sidebar theme
 const styles = ["header", "section_label", "element_label"] as const;
@@ -22,7 +33,7 @@ export type SidebarTheme = {
 
 export class Sidebar<T extends SidebarSpec> {
 	panel: ScrollablePanel;
-	sidebar_sizer: Sizer;
+	game_objs: T;
 	scene: Scene;
 	theme: SidebarTheme;
 
@@ -31,7 +42,10 @@ export class Sidebar<T extends SidebarSpec> {
 		this.scene = scene;
 		this.theme = theme;
 
-		this.sidebar_sizer = this.sidebarSizer(game_objs, elem_depth);
+		u.objectForEach(game_objs, obj => {
+			u.objectForEach(obj, ie => ie.create(scene, theme))
+		});
+		this.game_objs = game_objs;
 
 		this.panel = new ScrollablePanel(scene, {
 			anchor: {
@@ -43,7 +57,7 @@ export class Sidebar<T extends SidebarSpec> {
 			origin: 0,
 			background: this.makeBackground(this.theme.colors.bg),
 			panel: {
-				child: this.sidebar_sizer
+				child: this.sidebarSizer(game_objs, elem_depth)
 			},
 			slider: {
 	            track: scene.rexUI.add.roundRectangle({ width: 5, radius: 5, color: theme.colors.primary }),
@@ -53,6 +67,10 @@ export class Sidebar<T extends SidebarSpec> {
 	        },
 	        clampChildOY: true,
 		}).setDepth(bar_depth).layout();
+	}
+
+	activate(): void {
+		this.panel.setVisible(true).setActive(true);
 	}
 
 	deactivate(): void {
@@ -99,9 +117,9 @@ export class Sidebar<T extends SidebarSpec> {
 		return new GameObjects.Text(this.scene, 0, 0, txt, style);
 	}
 
-	makeSection(label: string, game_objs: Record<string, GameObjects.GameObject>): Sizer {
-		const labelled_objs = u.mapObject(game_objs, (obj, label) => {
-			return this.labelled(label, obj, "element_label")
+	makeSection(label: string, game_objs: Record<string, InputElement<any, any>>): Sizer {
+		const labelled_objs = u.mapObject(game_objs, (ie, label) => {
+			return this.labelled(label, ie.element, "element_label")
 		});
 		const sizer = this.makeSizer(labelled_objs);
 		return this.labelled(label, sizer, "section_label")
@@ -112,41 +130,60 @@ export class Sidebar<T extends SidebarSpec> {
 		return this.scene.rexUI.add.roundRectangle({color: color}).setToBack()
 	}
 
-	get<S extends Extract<keyof T, string>>(section_key: S, elem_key: Extract<keyof T[S], string>):
-			GameObjects.GameObject {
-		return (this.sidebar_sizer as any)
-			.getElement(section_key)
-			.getElement("object")
-			.getElement(elem_key)
-			.getElement("object");
-
+	get<S extends keyof T, E extends Extract<u.t.Layer2Keys<T>, string>>(
+			section_key: S, elem_key: E): ValueTypeOfInputElement<T[S][E]> {
+		// It's probably possible to retype T to make this type-safe, but it would be a big pain
+		return (this.game_objs as any)[section_key][elem_key].getValue();
 	}
 }
 
-export function numberSlider(scene: Scene, width_pct: number, def: number, min: number, max: number, 
-		step: number) {
-	const COLOR_LIGHT = 0x7b5e57;
-	const COLOR_DARK = 0x260e04;
+type NumberSliderParams = {
+	default: number,
+	min: number,
+	max: number,
+	step: number
+}
 
-	return scene.rexUI.add.slider({
-		anchor: {
-			width: `${width_pct}%`
-		},
-		space: {
-			top: 5,
-			bottom: 15
-		},
-        track: {
-        	height: 2,
-        	color: COLOR_DARK
-        },
-        thumb: {
-        	radius: 10,
-        	color: COLOR_LIGHT
-        },
-        valuechangeCallback: (v) => {console.log(v)},
-        gap: step / (max - min),
-    })
-    	.setValue(def, min, max)
-	    .layout();
+export class NumberSlider extends InputElement<Slider, number> {
+	params: NumberSliderParams;
+	width_pct: number;
+	value: number;
+
+	constructor(params: NumberSliderParams, width_pct: number){
+		super();
+		this.params = params;
+		this.width_pct = width_pct;
+	}
+
+	override create(scene: Scene, theme: SidebarTheme): void {
+		this.element = scene.rexUI.add.slider({
+			anchor: {
+				width: `${this.width_pct}%`
+			},
+			space: {
+				top: 5,
+				bottom: 15
+			},
+	        track: {
+	        	height: 2,
+	        	color: theme.colors.secondary
+	        },
+	        thumb: {
+	        	radius: 10,
+	        	color: theme.colors.primary
+	        },
+	        valuechangeCallback: () => {},
+	        gap: this.params.step / (this.params.max - this.params.min),
+	    })
+	    	.setValue(this.params.default, this.params.min, this.params.max)
+		    .layout();
+	}
+
+	sliderValToRealValue(val: number): number {
+		return Math.round(val * (this.params.max - this.params.min) + this.params.min)
+	}
+
+	override getValue(): number {
+		return this.sliderValToRealValue(this.element.value);
+	}
 }
