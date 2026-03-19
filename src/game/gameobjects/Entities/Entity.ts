@@ -1,6 +1,7 @@
-import * as u from '../../utils'
+import * as u from '../../helpers/utils'
 import { Beat } from '../Beat';
 import { GameObjects, Scene } from 'phaser';
+import { GameplaySettings } from '../types';
 
 export type Timing = {
 	beat: Beat,
@@ -26,11 +27,11 @@ export abstract class Entity {
 
 	// When changing the graphic object, reassigning would clear all properties like position.
 	// Instead, we must use methods to mutate it without reassigning
-	abstract initialGraphic(scene: Scene, settings: u.t.GameplaySettings["render"]): PhaserGraphic;
+	abstract initialGraphic(scene: Scene, settings: GameplaySettings["render"]): PhaserGraphic;
 	abstract clearGraphic(): void;
-	abstract drawGraphic(scene: Scene, settings: u.t.GameplaySettings["render"]): void;
+	abstract drawGraphic(scene: Scene, settings: GameplaySettings["render"]): void;
 
-	draw(scene: Scene, settings: u.t.GameplaySettings["render"]): this {
+	draw(scene: Scene, settings: GameplaySettings ["render"]): this {
 		if(this.graphic === undefined) {
 			this.graphic = this.initialGraphic(scene, settings);
 		} else {

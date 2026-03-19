@@ -1,4 +1,4 @@
-import * as u from '../utils'
+import * as u from '../helpers/utils'
 import * as c from '../config'
 
 export class Beat {

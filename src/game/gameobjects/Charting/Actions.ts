@@ -1,12 +1,12 @@
 import { ChartingNoteField } from "./NoteField";
-import * as u from '../../utils';
 import { Beat } from "../Beat";
 import { BpmMarker } from "../Entities/BpmMarker";
+import { Character } from "../../helpers/types";
 
 // This class stores functions to perform actions together with functions that undo them,
 // making it easy to implement undo and redo in the charting editor
 export type ChartingAction<E, U = E> = {
-	// Execute returns the data that undo needs, because it might have to be calculated in execution
+	// Execute returns the data that undo needs, because that data might have to be calculated during execution
 	execute: (nf: ChartingNoteField, data: E) => U;
 	undo: (nf: ChartingNoteField, data: U) => void;
 }
@@ -28,7 +28,7 @@ function reverseAction<E, U>(action: ReversibleChartingAction<E, U>)
 	};
 }
 
-export const placeOrRemoveChar: ChartingAction<{ beat: Beat, char: u.t.Character }> = {
+export const placeOrRemoveChar: ChartingAction<{ beat: Beat, char: Character }> = {
 	execute: (nf, dt) => {
 		nf.logic.placeOrRemoveChar(dt.beat, dt.char)
 		return dt;

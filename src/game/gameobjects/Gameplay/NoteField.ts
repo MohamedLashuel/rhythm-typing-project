@@ -1,19 +1,21 @@
 import { Scene } from 'phaser';
-import * as u from '../../utils'
+import * as u from '../../helpers/utils'
 import * as c from '../../config'
 import { Entity } from '../Entities/Entity';
 import { Chart } from "../Song"
 import { NoteFieldRenderer } from '../NoteFieldRenderer';
 import { KeyboardManager } from '../KeyboardManager';
 import { Note } from '../Entities/Note';
+import { Character, Point, Range } from '../../helpers/types';
+import { GameplaySettings, Judgment } from '../types';
 
 export class GameplayNoteField {
 	logic: GameplayLogic;
 	renderer: GameplayRenderer;
 	keyboard: KeyboardManager;
 
-	constructor(scene: Scene, chart: Chart, settings: u.t.GameplaySettings, 
-			keyboard: KeyboardManager, pt: u.t.Point) {
+	constructor(scene: Scene, chart: Chart, settings: GameplaySettings, 
+			keyboard: KeyboardManager, pt: Point) {
 		const entities = chart.createEntityMap().valuesArray();
 		const notes = entities.map(e => e.note).filter(v => v !== undefined);
 
@@ -46,7 +48,7 @@ class GameplayLogic {
 	current_index: number = 0;
 	emitter: u.MyEmitter = new u.MyEmitter();
 	score: number = 0;
-	judgments: u.t.Judgment[] = [];
+	judgments: Judgment[] = [];
 
 	constructor(notes: Note[]){
 		this.notes = notes;
@@ -84,7 +86,7 @@ class GameplayLogic {
 		return this.notes.slice(this.current_index);
 	}
 
-	hitNote(note: Note, char: u.t.Character): void {
+	hitNote(note: Note, char: Character): void {
 		if(!note.canHitChar(char)){
 			console.error("Tried to hit an invalid character on a note")
 			return;
@@ -145,7 +147,7 @@ class GameplayLogic {
 		this.scoreJudgment(judgment);
 	}
 
-	scoreJudgment(judgment: u.t.Judgment){
+	scoreJudgment(judgment: Judgment){
 		this.score += judgment.points;
 		this.emitter.emit("SCORE_CHANGED", [this.score]);
 	}
@@ -158,8 +160,8 @@ class GameplayLogic {
 
 // Gameplay uses a pre-sorted list to hold notes and keeps track of active notes with a simple range
 class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
-	constructor(scene: Scene, settings: u.t.GameplaySettings["render"], chart: Chart, entities: Entity[], 
-			pt: u.t.Point){
+	constructor(scene: Scene, settings: GameplaySettings["render"], chart: Chart, entities: Entity[], 
+			pt: Point){
 		super(scene, settings, chart, entities, pt);
 	}
 
@@ -167,7 +169,7 @@ class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
 	// NOTEFIELDRENDERER IMPLEMENTATION
 	// -----------------------------------------------
 
-	override initialActiveRange(): u.t.Range<number> {
+	override initialActiveRange(): Range<number> {
 		return { start: 0, end: 0 }
 	}
 	// Even if the chart has no notes to index, we only index with slice which returns []

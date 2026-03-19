@@ -1,5 +1,5 @@
 import { GameObjects, Scene } from "phaser";
-import { GameplaySettings } from "../../types";
+import { GameplaySettings } from "../types";
 import { Entity, PhaserGraphic, Timing } from "./Entity";
 import * as g from '../../graphics';
 

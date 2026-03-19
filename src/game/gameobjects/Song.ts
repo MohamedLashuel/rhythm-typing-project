@@ -1,10 +1,10 @@
 import { Timing } from './Entities/Entity';
 import { Beat } from './Beat';
-import BTree from 'sorted-btree';
-import * as u from '../utils';
 import * as c from '../config';
 import { EntityGroup, entityGroupfromGroupSpec, EntityGroupSpec } from './Entities/EntityGroup';
 import { ScrollZone } from './Entities/ScrollZone';
+import { JSONfied } from '../helpers/types';
+import { BinaryTree, binaryTreeFromJSON, GroupTree, groupTreeFromJSON } from '../helpers/BinaryTree';
 
 export class Song {
 	constructor(
@@ -33,20 +33,21 @@ export type BpmChange = {
 	total_time: number
 }
 
-export type EntityMap = u.GroupTree<Beat, EntityGroup>;
+export type EntityMap = GroupTree<Beat, EntityGroup>;
 export type EntityMapEntry = [Beat, Partial<EntityGroup>];
 export type ScrollEntry = [number, ScrollChange]
 export type BpmEntry = [Beat, BpmChange];
 
-export type EntitySpecMap = u.GroupTree<Beat, EntityGroupSpec>
+export type EntitySpecMap = GroupTree<Beat, EntityGroupSpec>
 
 export class Chart {
 	constructor(
 		public author: string = "",
+		public difficulty: number = 0,
 		// Indexed by time
-		public scroll_changes: BTree<number, ScrollChange> = new BTree(),
-		public bpms: BTree<Beat, BpmChange> = new BTree(undefined, Beat.compare),
-		public entity_specs: EntitySpecMap = new u.GroupTree(Beat.compare),
+		public scroll_changes: BinaryTree<number, ScrollChange> = new BinaryTree(undefined),
+		public bpms: BinaryTree<Beat, BpmChange> = new BinaryTree(Beat.compare),
+		public entity_specs: EntitySpecMap = new GroupTree(Beat.compare),
 		// Offset is used solely to play audio
 		// "Playback time" in other objects does not include offset
 		public offset: number = 0,
@@ -154,9 +155,10 @@ export class Chart {
 	// JSON
 	// -----------------------------------------------
 
-	toJSON(): u.t.JSONfied<Chart> {
+	toJSON(): JSONfied<Chart> {
 		return {
 			author: this.author,
+			difficulty: this.difficulty,
 			scroll_changes: this.scroll_changes.toArray(),
 			bpms: this.bpms.toArray(),
 			entity_specs: this.entity_specs.toArray(),
@@ -168,7 +170,7 @@ export class Chart {
 	static fromJSON(str: string): Chart {
 		const obj = JSON.parse(str, Chart.jsonReviver);
 		
-		const chart = new Chart(obj.author, obj.scroll_changes, obj.bpms, obj.entity_specs,
+		const chart = new Chart(obj.author, obj.difficulty, obj.scroll_changes, obj.bpms, obj.entity_specs,
 			obj.offset, obj.initial_bpm);
 
 		return chart;
@@ -176,11 +178,11 @@ export class Chart {
 
 	static jsonReviver(k: string, v: any){
 		if(k === "scroll_changes"){
-			return new BTree(v);
+			return binaryTreeFromJSON<number, ScrollChange>(undefined, v)
 		} else if (k === "bpms") {
-			return new BTree(v.map( ([b, n]: [any, any]) => [Beat.fromJSON(b), n]), Beat.compare);
+			return binaryTreeFromJSON(Beat.compare, v, (b) => Beat.fromJSON(b))
 		} else if (k === "entity_specs"){
-			return new u.GroupTree(Beat.compare, v.map( ([b, n]: [any, any]) => [Beat.fromJSON(b), n]));
+			return groupTreeFromJSON(Beat.compare, v, (b) => Beat.fromJSON(b));
 		} else {
 			return v;
 		}

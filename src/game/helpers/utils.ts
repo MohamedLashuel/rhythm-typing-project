@@ -1,6 +1,5 @@
-import BTree from "sorted-btree";
 import * as t from "./types"
-export * as t from "./types"
+import { Event, EventTable, Listener } from "../gameobjects/types";
 
 export function isChar(str: string): str is t.Character { 
 	return /^[A-z]$/.test(str);
@@ -8,6 +7,11 @@ export function isChar(str: string): str is t.Character {
 
 export function isNum(str: string): boolean {
 	return /^[0-9]+$/.test(str);
+}
+
+export function nonEmptyMap<T, R>(ary: t.NonEmptyArray<T>, fun: (t: T, i: number, array: T[]) => R)
+: t.NonEmptyArray<R> {
+	return ary.map(fun) as t.NonEmptyArray<R>;
 }
 
 export function arrayWithout<T>(ary: T[], els: T[]): T[] {
@@ -120,11 +124,6 @@ export function noteDivision(i: integer, len: integer){
 	return len / gcd(i, len);
 }
 
-// Split a string into individual characters, but keep segments inside parenthesis
-export function splitCharsExceptParensAndNumbers(str: string){
-	return str.split(/(?<![0-9])a{0}(?![^(]*\))/);
-}
-
 // Used in cases where TypeScript thinks a value could be undefined, but we're reasonably sure it's not
 // Checks and logs an error if it is undefined, then allows us to use the value as if it's not
 export function shouldntBeUndefined<T>(value: T | undefined, msg: string): asserts value is T {
@@ -181,73 +180,26 @@ export function roundTo(x: number, step: number){
 export class MyEmitter {
 	private event_emitter: Phaser.Events.EventEmitter = new Phaser.Events.EventEmitter();
 
-	emit<E extends t.Event>(code: E, args: t.EventTable[E]): void {
+	emit<E extends Event>(code: E, args: EventTable[E]): void {
 		this.event_emitter.emit(code, ...args);
 	}
 
-	addListeners(...listeners: t.Listener[]): void {
+	addListeners(...listeners: Listener[]): void {
 		listeners.forEach( (l) => this.event_emitter.on(l.event, l.fun, l.context));
 	}
 }
 
-// Binary tree specialized for storing objects with solely optional properties
-export class GroupTree<K, V extends {}> extends BTree<K, Partial<V>> {
-	compare: t.ComparatorIfNecessary<K>;
-	// Giving a function to compare is mandatory only if not keyed by string/number
-	constructor(compare: t.ComparatorIfNecessary<K>, entries?: [K, Partial<V>][]){
-		super(entries, compare);
-		this.compare = compare;
-	}
+// Download text as file to computer
+export function downloadText(text: string, filename: string) {
+	const blob = new Blob( [text], { type: "text/plain" })
+	const url = URL.createObjectURL(blob);
 
-	// I think BTree's get is incorrectly typed - if a default value is supplied, returning undefined should
-	// be impossible. This retyping fixes it.
-	get(key: K): Partial<V> | undefined
-	get(key: K, default_val: Partial<V>): Partial<V>
-	get(key: K, default_val?: Partial<V>): Partial<V> | undefined {
-		return super.get(key, default_val)
-	}
+	// Create a link element for the download and simulate a click
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = filename;
+	a.click();
 
-	getProp<P extends keyof V>(key: K, prop: P): V[P] | undefined {
-		return this.get(key)?.[prop];
-	}
-
-	setProp<P extends keyof V>(key: K, prop: P, val: V[P]){
-		const result = this.get(key);
-		if(result === undefined){
-			const obj: Partial<V> = {};
-			obj[prop] = val;
-			this.set(key, obj);
-		} else {
-			result[prop] = val;
-		}
-	}
-
-	deleteProp<P extends keyof V>(key: K, prop: P){
-		const result: Partial<V> = this.get(key) ?? {};
-		delete result[prop];
-		if(isObjectEmpty(result)) this.delete(key);
-	}
-
-	existsProp<P extends keyof V>(key: K, prop: P): boolean {
-		return this.getProp(key, prop) !== undefined;
-	}
-
-	map<R extends {}>(fun: (v: Partial<V>, k: K, i: number) => Partial<R>): GroupTree<K, R>{
-		const new_entries = this.mapValues(fun).toArray();
-		return new GroupTree<K, R>(this.compare, new_entries);
-	}
-
-	mapProps<R>(fun: (v: V[keyof V], k: K) => R): GroupTree<K, { [P in t.UnionKeys<Partial<V>>]: R }> {
-		return this.map<{ [P in t.UnionKeys<Partial<V>>]: R }>( (group, key) => mapObject(group, val => {
-			if(val === undefined) return undefined;
-			return fun(val, key)
-		}))
-	}
-
-	forEachProp(fun: (v: V[keyof V], k: K) => any): void {
-		this.forEachPair( (key, group) => mapObject(group, val => {
-			if(val === undefined) return;
-			fun(val, key)
-		}));
-	}
+	URL.revokeObjectURL(url);
+	a.remove();
 }

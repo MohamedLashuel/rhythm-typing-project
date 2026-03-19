@@ -1,4 +1,4 @@
-import * as u from '../../utils';
+import * as u from '../../helpers/utils';
 import { Entity, Timing } from "./Entity";
 import { Note } from "./Note";
 import { Chart } from "../Song";

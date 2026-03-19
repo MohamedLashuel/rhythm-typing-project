@@ -1,12 +1,10 @@
 FOR NEXT RELEASE:
-- Main menu
-- Results screen
-- Song select
-- Gameplay settings
+- Finish song select
+- Make results screen look nice
+- Make song select
 
 MISSING FEATURES:
 - Charting:
-	- Change playback rate
 	- Move receptor
 	- Group select and undo/redo in charting
 

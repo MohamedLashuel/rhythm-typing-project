@@ -1,9 +1,10 @@
 import { Scene, GameObjects } from "phaser";
 import { Entity } from "./Entities/Entity";
 import { Chart } from "./Song";
-import * as u from '../utils';
 import * as c from '../config';
 import * as g from '../graphics';
+import { GameplaySettings } from "./types";
+import { Point, Range } from "../helpers/types";
 
 export type UpdateDirection = "forward" | "backward" | "expand" | "contract";
 /*
@@ -20,16 +21,16 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	playback_time: number = 0;
 	scroll_position: number = 0;
 	current_scroll_mod: number = 1;
-	settings: u.t.GameplaySettings["render"];
+	settings: GameplaySettings["render"];
 	chart: Chart;
-	active_range: u.t.Range<EntityIndex>;
+	active_range: Range<EntityIndex>;
 
 	// -----------------------------------------------
 	// INITIALIZATION
 	// -----------------------------------------------
 
-	constructor(scene: Scene, settings: u.t.GameplaySettings["render"],
-			chart: Chart, entities: EntityStructType, pt: u.t.Point){
+	constructor(scene: Scene, settings: GameplaySettings["render"],
+			chart: Chart, entities: EntityStructType, pt: Point){
 		super(scene, pt.x, pt.y);
 
 		this.settings = settings;
@@ -55,7 +56,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 
 	}
 
-	abstract initialActiveRange(): u.t.Range<EntityIndex>
+	abstract initialActiveRange(): Range<EntityIndex>
 
 	abstract entitiesToArray(entities: EntityStructType): Entity[];
 
@@ -138,7 +139,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	abstract get active_entities(): Entity[]
 
 	updateWhichEntitiesActive(dir: "forward" | "backward" | "expand" | "contract"): void {
-		const data: Record<typeof dir, u.t.Range<["forward" | "backward", "activate" | "deactivate"]>> = {
+		const data: Record<typeof dir, Range<["forward" | "backward", "activate" | "deactivate"]>> = {
 			forward: { start: ["forward", "deactivate"], end: ["forward", "activate"]},
 			backward: { start: ["backward", "activate"], end: ["backward", "deactivate"]},
 			expand: { start: ["backward", "activate"], end: ["forward", "activate"]},

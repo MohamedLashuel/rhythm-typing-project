@@ -1,7 +1,7 @@
 import { GameObjects, Scene } from "phaser"
 import { Chart, Song } from "../Song";
 import * as g from '../../graphics';
-import * as u from '../../utils';
+import * as u from '../../helpers/utils';
 import TextAreaInput from "phaser3-rex-plugins/templates/ui/textareainput/TextAreaInput";
 import DropDownList from "phaser3-rex-plugins/templates/ui/dropdownlist/DropDownList";
 
@@ -40,7 +40,9 @@ export class ScreenManager {
 		this.active_screen = type;
 	}
 
-	deactivateActiveScreen(): void {
+	// Could be made more type-safe by turning class into a state machine and putting this function inside
+	// an "active screen" state. But it's only used in one place so eh
+	private deactivateActiveScreen(): void {
 		u.shouldntBeUndefined(this.active_screen, "Tried to deactivate active screen when there was none");
 		this.screens[this.active_screen].deactivate().saveChanges(this);
 		this.active_screen = undefined;

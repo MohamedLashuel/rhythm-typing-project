@@ -1,7 +1,8 @@
 import TextAreaInput from "phaser3-rex-plugins/templates/ui/textareainput/TextAreaInput"
-import * as u from './utils';
 import * as c from "./config"
 import { Scene } from "phaser"
+import { Point } from "./helpers/types";
+import { UITheme } from "./ui/types";
 // Contains graphics settings, including object positions, and graphic objects
 
 // Game size
@@ -19,6 +20,22 @@ export const SCORE_TEXT_PT = { x: WIDTH / 2, y: 128 }
 export const JUDGMENT_TEXT_PT = { x: WIDTH / 2, y: NOTE_FIELD_Y + TRACK_HEIGHT }
 export const SCORE_TWEEN_SPEED = 400
 
+// Song Select
+export const SONG_SELECT_THEME: UITheme = {
+    text_styles: {
+        header: { fontSize: 32, fontFamily: "note_font" },
+        section_label: { fontSize: 24, fontFamily: "note_font" },
+        element_label: { fontSize: 18, fontFamily: "note_font" },
+        value: { fontSize: 12, fontFamily: "note_font" }
+    },
+    colors: {
+        bg: 0x691883,
+        section: 0xb148d2,
+        primary: 0xfbeeff,
+        secondary: 0xe79aff
+    }
+}
+
 // Charting
 export const INFO_TEXT_Y = 200
 export const CHARTING_SCREEN_BG_COLOR = 0x220066
@@ -31,6 +48,21 @@ export const DEPTHS = {
 
 // Settings
 export const SETTINGS_WIDTH_PCT = 40;
+
+export const SETTINGS_THEME: UITheme = {
+    text_styles: {
+        header: { fontSize: 32, fontFamily: "note_font" },
+        section_label: { fontSize: 24, fontFamily: "note_font" },
+        element_label: { fontSize: 18, fontFamily: "note_font" },
+        value: { fontSize: 12, fontFamily: "note_font" }
+    },
+    colors: {
+        bg: 0x691883,
+        section: 0xb148d2,
+        primary: 0xfbeeff,
+        secondary: 0xe79aff
+    }
+}
 
 // Text styles
 export const NOTE_STYLE = {
@@ -94,7 +126,8 @@ export class Circle extends Phaser.GameObjects.Arc {
   }
 }
 
-export function chartingScreenTextInput(scene: Scene, pt: u.t.Point, header: string) {
+// Move this to UI once we refactor the charting screens
+export function chartingScreenTextInput(scene: Scene, pt: Point, header: string) {
     return new TextAreaInput(scene, {
         x: pt.x,
         y: pt.y,

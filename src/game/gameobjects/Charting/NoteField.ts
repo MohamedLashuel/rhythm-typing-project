@@ -1,6 +1,5 @@
 import { GameObjects, Scene } from 'phaser';
-import * as u from '../../utils'
-import * as du from '../../domutils'
+import * as u from '../../helpers/utils'
 import * as c from '../../config'
 import * as g from '../../graphics'
 import * as actions from './Actions'
@@ -13,6 +12,8 @@ import { BpmMarker } from '../Entities/BpmMarker';
 import InputText from 'phaser3-rex-plugins/plugins/inputtext';
 import { ScrollZone } from '../Entities/ScrollZone';
 import { EntityGroup, EntityKey } from '../Entities/EntityGroup';
+import { GameplaySettings } from '../types';
+import { Character, Point, Range } from '../../helpers/types';
 
 type Cursor = { position: Beat, increment: c.ValidDivision }
 const DEFAULT_CURSOR: Readonly<Cursor> = { position: Beat.ZERO_BEAT(), increment: 4 }
@@ -30,8 +31,8 @@ export class ChartingNoteField {
 	emitter: u.MyEmitter = new u.MyEmitter();
 	action_queue: actions.ChartingActionWithData<any>[] = [];
 
-	constructor(scene: Scene, pt: u.t.Point, song: Song, initial_chart: Chart, 
-			settings: u.t.GameplaySettings){
+	constructor(scene: Scene, pt: Point, song: Song, initial_chart: Chart, 
+			settings: GameplaySettings){
 		this.song = song;
 		this.current_chart = initial_chart;
 
@@ -55,7 +56,7 @@ export class ChartingNoteField {
 		}
 	}
 
-	updateSettings(settings: u.t.GameplaySettings) {
+	updateSettings(settings: GameplaySettings) {
 		this.renderer.settings = settings.render;
 	}
 
@@ -123,7 +124,7 @@ export class ChartingNoteField {
 	downloadSong(): void {
 		this.saveCurrentChart();
 		const json_string = JSON.stringify(this.song);
-		du.downloadText(json_string, "song.json");
+		u.downloadText(json_string, "song.json");
 		// For debugging
 		console.log(json_string);
 	}
@@ -223,7 +224,7 @@ class ChartingLogic {
 		public chart: Chart,
 		public entities: EntityMap){}
 
-	placeOrRemoveChar(beat: Beat, char: u.t.Character){
+	placeOrRemoveChar(beat: Beat, char: Character){
 		const existing_note = this.entities.getProp(beat, "note");
 		const new_chars = (existing_note === undefined) ? [char] 
 			: u.toggleInclusion(existing_note.chars, char);
@@ -310,12 +311,12 @@ class ChartingLogic {
 }
 
 class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
-	active_range: u.t.Range<Beat> = { start: Beat.ZERO_BEAT(), end: Beat.ZERO_BEAT()}
+	active_range: Range<Beat> = { start: Beat.ZERO_BEAT(), end: Beat.ZERO_BEAT()}
 	cursor: Cursor = DEFAULT_CURSOR;
 	info_text: InfoText;
 
-	constructor(scene: Scene, settings: u.t.GameplaySettings["render"], chart: Chart, entities: EntityMap, 
-			pt: u.t.Point){
+	constructor(scene: Scene, settings: GameplaySettings["render"], chart: Chart, entities: EntityMap, 
+			pt: Point){
 		super(scene, settings, chart, entities, pt);
 		this.info_text = new InfoText(scene, { beat: 0, pb_time: 0, increment: DEFAULT_CURSOR.increment });
 		this.add(this.info_text);
@@ -325,7 +326,7 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 	// NOTEFIELDRENDERER IMPLEMENTATION
 	// -----------------------------------------------
 
-	override initialActiveRange(): u.t.Range<Beat> {
+	override initialActiveRange(): Range<Beat> {
 		return { start: Beat.ZERO_BEAT(), end: Beat.ZERO_BEAT() }
 	}
 

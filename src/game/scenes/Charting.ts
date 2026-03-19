@@ -32,7 +32,6 @@ export class Charting extends Scene
         this.camera.setBackgroundColor(0x000000);
         
         this.manager = new ChartingManager(this, {x: 0, y: g.NOTE_FIELD_Y}, this.song);
-        this.manager.keyboard.registerHandlers(this);
         // This isn't needed for the game scene, but it is needed here. No clue why.
         this.add.existing(this.manager.note_field.renderer);
 

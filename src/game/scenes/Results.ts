@@ -1,16 +1,16 @@
 import { Scene } from 'phaser';
-import * as u from '../utils';
+import * as u from '../helpers/utils';
+import { ResultsData } from './types';
 
 export class Results extends Scene
 {
-	camera: Phaser.Cameras.Scene2D.Camera;
-	dt: u.t.ResultsData;
+	dt: ResultsData;
 
     constructor () {
         super('Results');
     }
 
-    init(data: u.t.ResultsData) {
+    init(data: ResultsData) {
     	this.dt = data;
     }
 
@@ -20,8 +20,8 @@ export class Results extends Scene
 
     create ()
     {
-        this.camera = this.cameras.main;
-        this.camera.setBackgroundColor(0x000000);
+        this.cameras.main.fadeIn(1000, 0, 0, 0);
+        this.cameras.main.setBackgroundColor(0x000000);
 
         this.makeResultsScreen();
 
@@ -34,7 +34,7 @@ export class Results extends Scene
 
     makeResultsScreen() {
     	this.add.text(100, 100, this.dt.song.song_name, {fontSize: 24});
-    	this.add.text(100, 300, this.dt.score.toString(), {fontSize: 24});
+    	this.add.text(100, 300, `Score: ${this.dt.score}`, {fontSize: 24});
     	const judgment_names: string[] = this.dt.judgments.map(j => j.name);
     	this.add.text(100, 500, JSON.stringify(u.countStrings(judgment_names)), {fontSize: 24});
     }

@@ -1,7 +1,7 @@
 import { Scene, GameObjects } from 'phaser'
-import * as u from '../../utils'
 import * as g from '../../graphics'
 import { Entity, PhaserGraphic, Timing } from './Entity';
+import { GameplaySettings } from '../types';
 
 export class BpmMarker extends Entity {
 	bpm: number;
@@ -13,7 +13,7 @@ export class BpmMarker extends Entity {
 		this.bpm = bpm;
 	}
 
-	override initialGraphic(scene: Scene, _settings: u.t.GameplaySettings['render']): PhaserGraphic {
+	override initialGraphic(scene: Scene, _settings: GameplaySettings['render']): PhaserGraphic {
 		return new GameObjects.Container(scene);
 	}
 
@@ -21,7 +21,7 @@ export class BpmMarker extends Entity {
 		this.graphic.removeAll(true);
 	}
 
-	override drawGraphic(scene: Scene, _settings: u.t.GameplaySettings['render']): void {
+	override drawGraphic(scene: Scene, _settings: GameplaySettings['render']): void {
 		const line = new GameObjects.Graphics(scene)
 			.lineStyle(4, 0xff0000)
 			.lineBetween(0, -g.TRACK_HEIGHT / 2, 0, g.TRACK_HEIGHT / 2);

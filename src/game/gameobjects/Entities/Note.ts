@@ -1,24 +1,25 @@
 import { Scene, GameObjects } from 'phaser'
-import * as u from '../../utils'
+import * as u from '../../helpers/utils'
 import * as g from '../../graphics'
-import { GameplaySettings } from '../../types';
+import { Character } from '../../helpers/types';
 import { Entity, Timing } from './Entity';
+import { GameplaySettings } from '../types';
 
 
 // Normal notes use text, holds use containers of the text and the hold graphic
 // Jump notes are implemented as a single note with multiple characters
 export class Note extends Entity {
-	chars: u.t.Character[];
-	hit_chars: u.t.Character[] = [];
+	chars: Character[];
+	hit_chars: Character[] = [];
 	declare graphic: NoteContainer;
 
-	constructor(chars: u.t.Character[], timing: Timing, end_timing?: Timing
+	constructor(chars: Character[], timing: Timing, end_timing?: Timing
 	){
 		super(timing, end_timing);
 		this.chars = chars;
 	}
 
-	override initialGraphic(scene: Scene, _settings: u.t.GameplaySettings["render"]): NoteContainer {
+	override initialGraphic(scene: Scene, _settings: GameplaySettings["render"]): NoteContainer {
 		return new NoteContainer(scene);
 	}
 
@@ -26,7 +27,7 @@ export class Note extends Entity {
 		this.graphic.removeAll(true);
 	}
 
-	override drawGraphic(_scene: Scene, settings: u.t.GameplaySettings['render']): void {
+	override drawGraphic(_scene: Scene, settings: GameplaySettings['render']): void {
 		this.graphic.setup(settings, this.chars, this.timing, this.end_timing);
 	}
 
@@ -42,7 +43,7 @@ export class Note extends Entity {
 		this.end_timing = end_timing;
 	}
 
-	canHitChar(char: u.t.Character): boolean {
+	canHitChar(char: Character): boolean {
 		if(!this.chars.includes(char)) return false;
 		if(this.hit_chars.includes(char)) return false;
 		return true;
@@ -67,7 +68,7 @@ class NoteContainer extends GameObjects.Container {
 		super(scene);
 	}
 
-	setup(settings: u.t.GameplaySettings["render"], chars: u.t.Character[], 
+	setup(settings: GameplaySettings["render"], chars: Character[], 
 			timing: Timing, end_timing?: Timing) {
 		this.num_chars = chars.length;
 		
@@ -80,7 +81,7 @@ class NoteContainer extends GameObjects.Container {
 		this.add(text_objs);
 	}
 
-	makeTextObject(char: u.t.Character, y: number, stroke_color: string): GameObjects.Text {
+	makeTextObject(char: Character, y: number, stroke_color: string): GameObjects.Text {
 		return new GameObjects.Text(this.scene, 0, y, char, g.NOTE_STYLE)
 			.setOrigin(0.5, 0.5)
 			.setStyle( { stroke: stroke_color });

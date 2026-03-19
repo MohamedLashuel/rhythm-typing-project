@@ -1,14 +1,14 @@
 import { Scene } from "phaser";
-import * as u from '../utils'
+import { GameplaySettings, SoundInstance } from "./types";
 
 // Audio is preloaded in the scene itself with key "song" (or might not be loaded, which is also ok)
 export class SoundManager {
 	scene: Scene;
-	settings: u.t.GameplaySettings["sound"];
-	song_instance?: u.t.SoundInstance
+	settings: GameplaySettings["sound"];
+	song_instance?: SoundInstance
 	complete: boolean = false;
 
-	constructor(scene: Scene, settings: u.t.GameplaySettings["sound"]){
+	constructor(scene: Scene, settings: GameplaySettings["sound"]){
 		this.scene = scene;
 		this.settings = settings;
 		this.trySetSongInstance();
@@ -50,7 +50,7 @@ export class SoundManager {
 		this.scene.sound.stopByKey("song");
 	}
 
-	updateSettings(settings: u.t.GameplaySettings): void {
+	updateSettings(settings: GameplaySettings): void {
 		this.settings = settings.sound;
 	}
 

@@ -4,6 +4,11 @@ export class KeyboardManager {
 	down_queue: KeyboardEventQueue = new KeyboardEventQueue();
 	up_queue: KeyboardEventQueue = new KeyboardEventQueue();
 
+	constructor(scene: Scene){
+		scene.input.keyboard?.on("keydown", this.handleKeyDown, this);
+        scene.input.keyboard?.on("keyup", this.handleKeyUp, this);
+	}
+
 	handleKeyDown(event: KeyboardEvent){
 		if(event.ctrlKey) event.preventDefault();
 		this.down_queue.push(event);
@@ -14,14 +19,9 @@ export class KeyboardManager {
 		this.up_queue.push(event)
 	}
 
-	handleQueues(down_fun: (k: KeyboardEvent) => void, up_fun: (k: KeyboardEvent) => void): void {
-		this.down_queue.handleQueue(down_fun);
-		this.up_queue.handleQueue(up_fun);
-	}
-
-	registerHandlers(scene: Scene): void {
-		scene.input.keyboard?.on("keydown", this.handleKeyDown, this);
-        scene.input.keyboard?.on("keyup", this.handleKeyUp, this);
+	handleQueues(down_fun?: (k: KeyboardEvent) => void, up_fun?: (k: KeyboardEvent) => void): void {
+		if(down_fun !== undefined) this.down_queue.handleQueue(down_fun);
+		if(up_fun !== undefined) this.up_queue.handleQueue(up_fun);
 	}
 }
 

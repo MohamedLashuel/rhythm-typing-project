@@ -2,9 +2,10 @@ import { GameplayNoteField } from "./NoteField";
 import { ScoreRenderer } from "./ScoreRenderer";
 import { SoundManager } from "../Sound";
 import { KeyboardManager } from "../KeyboardManager"
-import * as u from '../../utils';
 import { Chart } from "../Song";
 import { Scene } from "phaser";
+import { GameplaySettings } from "../types";
+import { Point } from "../../helpers/types";
 
 export class GameplayManager {
 	note_field: GameplayNoteField;
@@ -12,8 +13,8 @@ export class GameplayManager {
 	scorer: ScoreRenderer;
 	keyboard: KeyboardManager;
 
-	constructor(scene: Scene, settings: u.t.GameplaySettings, chart: Chart, field_loc: u.t.Point){
-		this.keyboard = new KeyboardManager();
+	constructor(scene: Scene, settings: GameplaySettings, chart: Chart, field_loc: Point){
+		this.keyboard = new KeyboardManager(scene);
 		this.note_field = new GameplayNoteField(scene, chart, settings, this.keyboard, field_loc);
 		this.sound = new SoundManager(scene, settings.sound);
 		this.scorer = new ScoreRenderer(scene);

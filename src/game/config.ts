@@ -1,9 +1,9 @@
-import * as t from './types'
+import { GameplaySettings, Judgment } from './gameobjects/types'
 
 // Contains global gameplay settings
 
-export const MISS_JUDGMENT: t.Judgment = { window: undefined, name: "MISS", points: -10}
-export const JUDGMENTS: t.Judgment[] = [
+export const MISS_JUDGMENT: Judgment = { window: undefined, name: "MISS", points: -10}
+export const JUDGMENTS: Judgment[] = [
 	{ window: 100 / 1000, name: "EXCELLENT", points: 100 },
 	{ window: 400 / 1000, name: "GREAT", points: 80 },
 	{ window: 1000 / 1000, name: "OK", points: 50},
@@ -23,7 +23,7 @@ export function isValidDivision(x: number): x is ValidDivision {
 	return VALID_DIVISIONS.includes(x as ValidDivision);
 }
 
-export const DEFAULT_SETTINGS: t.GameplaySettings = {
+export const DEFAULT_SETTINGS: GameplaySettings = {
 	render: {
 		base_scroll_speed: 600
 	},

@@ -1,6 +1,6 @@
 import { GameObjects, Scene, Tweens } from "phaser";
-import * as u from '../../utils';
 import * as g from '../../graphics';
+import { Judgment } from "../types";
 
 export class ScoreRenderer {
 	scene: Scene;
@@ -18,7 +18,7 @@ export class ScoreRenderer {
 		this.score_text.setOrigin(0.5)
 	}
 
-	onJudgmentMade(judgment: u.t.Judgment): void {
+	onJudgmentMade(judgment: Judgment): void {
 		this.judgment_text.setText(judgment.name)
 			.setStyle( { stroke: g.NORMAL_JUDGMENT_PALETTE[judgment.name] ?? '#ffffff' } ) ;
 	}

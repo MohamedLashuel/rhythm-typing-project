@@ -8,6 +8,7 @@ import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 import { WIDTH, HEIGHT } from './graphics';
 import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin.js';
+import { SongSelect } from './scenes/SongSelect';
 
 //  Find out more information about the Game Config at:
 //  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -24,6 +25,7 @@ const config: Phaser.Types.Core.GameConfig = {
         Boot,
         Preloader,
         MainMenu,
+        SongSelect,
         Gameplay,
         Results,
         Charting,
