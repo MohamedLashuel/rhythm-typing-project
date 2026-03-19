@@ -444,7 +444,7 @@ class InfoText extends GameObjects.Container {
 	pb_time: GameObjects.Text;
 	increment: GameObjects.Text;
 
-	constructor(scene: Scene, initial_txt: { beat: any, pb_time: any, increment: any}) {
+	constructor(scene: Scene, initial_txt: { beat: number, pb_time: number, increment: number }) {
 		super(scene, 0, g.INFO_TEXT_Y);
 
 		this.beat = new GameObjects.Text(scene, 0, 0, initial_txt.beat.toString(), g.NOTE_STYLE);

@@ -8,6 +8,7 @@ import { UITheme } from "./types";
 
 export abstract class PickableElement<T extends GameObjects.GameObject> {
 	game_obj: T
+	hovered: boolean = false;
 
 	constructor(
 		public scene: Scene, 
@@ -36,7 +37,8 @@ export class SelectableSong extends PickableElement<Sizer> {
 		const selectable_charts = u.nonEmptyMap(this.song.charts, 
 			ch => new SelectableChart(this.scene, this.theme, ch));
 
-		this.chart_selector = new ElementPickerList(this.scene, this.theme, selectable_charts, "horizontal");
+		this.chart_selector = new ElementPickerList(this.scene, this.theme, selectable_charts, "horizontal",
+			{height: 32});
 		this.text = this.scene.add.text(0, 0, this.song.song_name, {
 			...this.theme.text_styles.section_label,
 			color: s.colorToString(this.theme.colors.secondary)
@@ -44,7 +46,7 @@ export class SelectableSong extends PickableElement<Sizer> {
 		const sizer = s.makeSizer(this.scene, [
 			this.text,
 			this.chart_selector.panel
-		]);
+		])
 		sizer.setInteractive();
 
 		return sizer;
@@ -53,10 +55,12 @@ export class SelectableSong extends PickableElement<Sizer> {
 	hover(){
 		this.text.setStyle( { color: s.colorToString(this.theme.colors.primary) } )
 		this.chart_selector.selectedElement().hover();
+		this.hovered = true;
 	}
 	unhover(){
 		this.text.setStyle( { color: s.colorToString(this.theme.colors.secondary) } )
 		this.chart_selector.unhoverAll();
+		this.hovered = false;
 	}
 
 	processKeyDownEvent(event: KeyboardEvent): void {
@@ -76,14 +80,14 @@ export class SelectableChart extends PickableElement<GameObjects.Text> {
 
 	createGameObj(): GameObjects.Text {
 		return this.scene.add.text(0, 0, this.chart.difficulty.toString(), 
-			this.theme.text_styles.element_label).setInteractive();
+			this.theme.text_styles.section_label).setInteractive();
 	}
 
 	hover(){
-		this.game_obj.setColor('#0000ff');
+		this.game_obj.setColor(s.colorToString(this.theme.colors.primary));
 	}
 
 	unhover(){
-		this.game_obj.setColor('#00ff00');
+		this.game_obj.setColor(s.colorToString(this.theme.colors.secondary));
 	}
 }

@@ -38,7 +38,7 @@ export type EntityMapEntry = [Beat, Partial<EntityGroup>];
 export type ScrollEntry = [number, ScrollChange]
 export type BpmEntry = [Beat, BpmChange];
 
-export type EntitySpecMap = GroupTree<Beat, EntityGroupSpec>
+export type EntitySpecMap = GroupTree<Beat, Required<EntityGroupSpec>>
 
 export class Chart {
 	constructor(

@@ -12,6 +12,8 @@ export class GameplayManager {
 	sound: SoundManager;
 	scorer: ScoreRenderer;
 	keyboard: KeyboardManager;
+	// Used for graceful exit if something goes wrong
+	should_exit: boolean = false;
 
 	constructor(scene: Scene, settings: GameplaySettings, chart: Chart, field_loc: Point){
 		this.keyboard = new KeyboardManager(scene);
@@ -28,9 +30,17 @@ export class GameplayManager {
        	this.sound.startPlayback(chart.offset);
 	}
 
-	myUpdate(){ this.note_field.myUpdate(this.sound.song_playback_time); }
+	myUpdate(){ 
+		const pb_time = this.sound.song_playback_time;
+		if(pb_time === undefined) {
+			console.error("Playback time undefined - probably couldn't load song audio")
+			this.should_exit = true;
+			return;
+		}
+		this.note_field.myUpdate(pb_time); 
+	}
 
 	isComplete(): boolean {
-		return this.note_field.logic.isComplete() //&& this.sound.complete;
+		return this.should_exit || (this.note_field.logic.isComplete() && this.sound.complete);
 	}
 }

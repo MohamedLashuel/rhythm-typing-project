@@ -43,7 +43,6 @@ export class Gameplay extends Scene
 
     update (_time: number, _delta_ms: number)
     {
-        console.log(this.is_fading)
         this.updateDebug();
         if( this.manager.isComplete() ) {
             if(!this.is_fading) this.finishChart();

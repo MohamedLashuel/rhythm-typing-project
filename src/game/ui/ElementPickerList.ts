@@ -3,7 +3,6 @@ import * as u from '../helpers/utils';
 import * as s from './shared';
 import { PickableElement } from "./PickableElement";
 import ScrollablePanel from "phaser3-rex-plugins/templates/ui/scrollablepanel/ScrollablePanel";
-import Anchor from "phaser3-rex-plugins/plugins/behaviors/anchor/Anchor";
 import { NonEmptyArray } from "../helpers/types";
 import { UITheme } from "./types";
 
@@ -13,12 +12,12 @@ export class ElementPickerList<T extends PickableElement<any>> {
 	panel: ScrollablePanel;
 
 	constructor(scene: Scene, theme: UITheme, elements: NonEmptyArray<T>, 
-			dir: "vertical" | "horizontal" = "vertical", anchor: Anchor.IConfig = {}) {
+			dir: "vertical" | "horizontal" = "vertical", config: Partial<ScrollablePanel.IConfig> = {}) {
 		this.elements = elements;
 		this.attachPointerEventListeners(elements);
 
 		this.panel = new ScrollablePanel(scene, {
-			anchor: anchor,
+			...config,
 			// Render from top-right corner as the panel is on the right edge
 			originX: 1,
 			originY: 0,
@@ -29,8 +28,8 @@ export class ElementPickerList<T extends PickableElement<any>> {
 	        clampChildOY: true,
 		}).layout();
 
-		
 		this.cursor = 0;
+		this.elements.forEach(e => e.unhover());
 		this.elements[0]?.hover();
 	}
 
@@ -57,8 +56,9 @@ export class ElementPickerList<T extends PickableElement<any>> {
 	processKeyDownEvent(event: KeyboardEvent): void {
 		if(event.key === "ArrowDown") this.moveCursor("down");
 		else if (event.key === "ArrowUp") this.moveCursor("up");
-
-		else this.elements[this.cursor]?.processKeyDownEvent(event);
+		else {
+			if(this.selectedElement().hovered) this.selectedElement().processKeyDownEvent(event);
+		}
 	}
 
 	moveCursor(dir: "up" | "down"): void {

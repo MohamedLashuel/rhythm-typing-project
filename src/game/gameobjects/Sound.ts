@@ -56,7 +56,7 @@ export class SoundManager {
 
 	// If playback time should be negative (because of negative offset), this returns 0
 	// Might be a problem later, but I can't find a better way
-	get song_playback_time(): number {
-		return this.song_instance?.seek ?? 0;
+	get song_playback_time(): number | undefined {
+		return this.song_instance?.seek;
 	}
 }

@@ -168,7 +168,7 @@ class ChartList extends Screen {
 			background: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 0, 0x000000),
 			list: {
 				createButtonCallback: function (scene, option) {
-                    var button = scene.rexUI.add.label({
+                    const button = scene.rexUI.add.label({
                         background: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 0),
                         text: scene.add.text(0, 0, option.text),
                     });

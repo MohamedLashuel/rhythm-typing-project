@@ -20,16 +20,13 @@ export class SongSelect extends Scene
         super('SongSelect');
     }
 
-    init( data: { songs: NonEmptyArray<Song> }) {
-        this.songs = data.songs;
-    }
-
     preload () {
-
+        this.load.json('songs', 'assets/all_songs.json');
     }
 
     create ()
     {
+        this.songs = this.cache.json.get('songs').map((json: string) => Song.fromJSON(json));
         this.keyboard = new KeyboardManager(this);
         this.settings = new SettingsTab(this);
         this.cameras.main.setBackgroundColor(0x000000);
@@ -50,9 +47,11 @@ export class SongSelect extends Scene
     makeSongSelect(): void {
         const els = u.nonEmptyMap(this.songs, s => new SelectableSong(this, g.SONG_SELECT_THEME, s));
         this.select = new ElementPickerList(this, g.SONG_SELECT_THEME, els, "vertical", {
-            right: 'right',
-            height: '100%',
-            width: '40%'
+            anchor: {
+                right: 'right',
+                height: '100%',
+                width: '40%'
+            }
         });
     }
 
