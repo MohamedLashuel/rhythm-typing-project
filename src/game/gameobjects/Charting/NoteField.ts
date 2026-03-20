@@ -49,9 +49,10 @@ export class ChartingNoteField {
 		);
 	}
 
-	myUpdate(delta_ms: number): void {
+	// pb_time is undefined if not currently playing or audio is not loaded correctly
+	myUpdate(pb_time: number | undefined): void {
 		if(this.currently_playing){
-			this.playback_time += delta_ms / 1000;
+			this.playback_time = pb_time ?? 0;
 			this.renderer.scrollToTime(this.playback_time);
 		}
 	}
@@ -134,7 +135,9 @@ export class ChartingNoteField {
 	}
 
 	moveCursorBy(increment: c.ValidDivision, dir: "forward" | "backward"): void {
+		console.log(this.cursor.position)
 		const new_pos = this.cursor.position.addOrSnapToDivision(increment, dir);
+		console.log(new_pos)
 		if(new_pos.measure < 0) return;
 		this.moveCursorTo(new_pos);
 	}
@@ -153,7 +156,7 @@ export class ChartingNoteField {
 
 	startOrStopPlayback(): void {
 		if(!this.currently_playing){
-			this.emitter.emit("PLAYBACK_START", [this.playback_time + this.current_chart.offset]);
+			this.emitter.emit("PLAYBACK_START", [this.playback_time]);
 		} else {
 			this.emitter.emit("PLAYBACK_STOP", []);
 			this.resetPlaybackTime();

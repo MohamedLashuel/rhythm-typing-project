@@ -12,22 +12,24 @@ export class GameplayManager {
 	sound: SoundManager;
 	scorer: ScoreRenderer;
 	keyboard: KeyboardManager;
-	// Used for graceful exit if something goes wrong
+	// When set to true, immediately starts exiting
 	should_exit: boolean = false;
 
 	constructor(scene: Scene, settings: GameplaySettings, chart: Chart, field_loc: Point){
 		this.keyboard = new KeyboardManager(scene);
 		this.note_field = new GameplayNoteField(scene, chart, settings, this.keyboard, field_loc);
-		this.sound = new SoundManager(scene, settings.sound);
+		this.sound = new SoundManager(scene, settings.sound, chart.offset);
 		this.scorer = new ScoreRenderer(scene);
 
+		this.keyboard.onKeyHeld("Escape", 1, () => this.should_exit = true);
+
 		this.note_field.logic.emitter.addListeners(
-			{ event: "NOTE_HIT", fun: this.sound.playSoundFactory("hit"), context: this.sound }, 
+			{ event: "NOTE_HIT", fun: this.sound.playHitSound, context: this.sound }, 
 			{ event: "SCORE_CHANGED", fun: this.scorer.onScoreChanged, context: this.scorer },
 			{ event: "JUDGMENT_MADE", fun: this.scorer.onJudgmentMade, context: this.scorer }
        	);
 
-       	this.sound.startPlayback(chart.offset);
+       	this.sound.startPlayback();
 	}
 
 	myUpdate(){ 

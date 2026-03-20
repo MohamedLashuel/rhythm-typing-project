@@ -6,7 +6,7 @@ import { Scene } from "phaser";
 import { SCREEN_TYPES, ScreenManager } from "./Screens";
 import { Song } from "../Song";
 import { KeyboardManager } from "../KeyboardManager";
-import { SettingsTab } from "../Settings";
+import { SettingsTab } from "../SettingsSidebar";
 import { Point } from "../../helpers/types";
 
 export class ChartingManager {
@@ -21,7 +21,7 @@ export class ChartingManager {
 		const initial_chart = song.charts[0];
 		const settings = c.DEFAULT_SETTINGS;
 		this.note_field = new ChartingNoteField(scene, field_loc, song, initial_chart, settings);
-		this.sound = new SoundManager(scene, settings.sound);
+		this.sound = new SoundManager(scene, settings.sound, initial_chart.offset);
 		this.screens = new ScreenManager(scene, song, 0);
 		this.settings_tab = new SettingsTab(scene);
 		this.keyboard = new KeyboardManager(scene);
@@ -54,8 +54,8 @@ export class ChartingManager {
 			this.note_field.processKeyDownEvent(event); 
 	}
 
-	myUpdate(delta_ms: number){ 
-		this.note_field.myUpdate(delta_ms); 
+	myUpdate(){ 
+		this.note_field.myUpdate(this.sound.song_playback_time); 
 		this.keyboard.handleQueues(evt => this.processKeyDownEvent(evt), evt => this.processKeyUpEvent(evt))
 	}
 }

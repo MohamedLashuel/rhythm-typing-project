@@ -39,10 +39,10 @@ export class Charting extends Scene
         
     }
 
-    update (_time: number, delta_ms: number)
+    update ()
     {
-        this.updateDebug(JSON.stringify(this.manager.note_field.renderer.entities));
-        this.manager.myUpdate(delta_ms);
+        this.updateDebug();
+        this.manager.myUpdate();
     }
 
     // Used to display values for debugging

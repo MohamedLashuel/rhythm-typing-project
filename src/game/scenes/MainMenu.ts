@@ -25,8 +25,8 @@ export class MainMenu extends Scene
             this.scene.start('SongSelect');
         });
 
-        this.input?.keyboard?.addKey('c').on("down", () => {
-            this.scene.start('Precharting');
+        this.input.keyboard?.on("keydown", (evt: KeyboardEvent) => {
+            if(evt.key === 'c') this.scene.start('Precharting');
         })
     }
 }

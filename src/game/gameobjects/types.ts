@@ -45,6 +45,8 @@ export type GameplaySettings = {
 		base_scroll_speed: number
 	},
 	sound: {
-		music_rate: number
+		music_rate: number,
+		music_volume: number,
+		hitsound_volume: number
 	}
 }

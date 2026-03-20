@@ -49,7 +49,10 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 		this.entities = chart_entities;
 
 		this.entity_container.removeAll(true);
-		this.entitiesToArray(chart_entities).forEach(e => this.addEntity(e));
+		this.entitiesToArray(chart_entities).forEach(e => {
+			this.addEntity(e);
+			e.deactivate();
+		});
 
 		this.active_range = this.initialActiveRange();
 		this.scrollToTime(0);

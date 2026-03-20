@@ -28,6 +28,8 @@ export const DEFAULT_SETTINGS: GameplaySettings = {
 		base_scroll_speed: 600
 	},
 	sound: {
-		music_rate: 1
+		music_rate: 1,
+		music_volume: 0.5,
+		hitsound_volume: 0.5
 	}
 }

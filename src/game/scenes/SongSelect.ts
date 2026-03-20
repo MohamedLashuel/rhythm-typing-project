@@ -5,7 +5,7 @@ import { SelectableSong } from '../ui/PickableElement';
 import { KeyboardManager } from '../gameobjects/KeyboardManager';
 import * as u from '../helpers/utils';
 import * as g from '../graphics';
-import { SettingsTab } from '../gameobjects/Settings';
+import { SettingsTab } from '../gameobjects/SettingsSidebar';
 import { NonEmptyArray } from '../helpers/types';
 
 export class SongSelect extends Scene

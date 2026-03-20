@@ -5,12 +5,14 @@ import { GameplaySettings, SoundInstance } from "./types";
 export class SoundManager {
 	scene: Scene;
 	settings: GameplaySettings["sound"];
-	song_instance?: SoundInstance
+	song_instance?: SoundInstance;
+	offset: number;
 	complete: boolean = false;
 
-	constructor(scene: Scene, settings: GameplaySettings["sound"]){
+	constructor(scene: Scene, settings: GameplaySettings["sound"], offset: number){
 		this.scene = scene;
 		this.settings = settings;
+		this.offset = offset;
 		this.trySetSongInstance();
 	}
 
@@ -31,19 +33,18 @@ export class SoundManager {
 	}
 
 	// Returns a function that plays the specified sound when called
-	playSoundFactory(key: string): () => void {
-		return () => {
-			this.play(key);
-		}
+	playHitSound(): void {
+		this.play("hit", { volume: this.settings.hitsound_volume });
 	}
 
-	startPlayback(start_time: number): void {
-		const seek = start_time > 0 ? start_time : 0;
-		const delay = start_time < 0 ? start_time : 0;
+	startPlayback(start_time: number = 0): void {
+		const corrected_start = start_time + this.offset;
+		const seek = corrected_start > 0 ? corrected_start : 0;
+		const delay = corrected_start < 0 ? corrected_start : 0;
 		// Wait until main thread unblocked so that audio syncs properly
-		requestAnimationFrame( () => this.song_instance?.play( 
-			{ seek: seek, delay: delay, rate: this.settings.music_rate } )
-		);
+		requestAnimationFrame( () => {this.song_instance?.play( 
+			{ seek: seek, delay: delay, rate: this.settings.music_rate, volume: this.settings.music_volume } )
+		});
 	}
 
 	stopPlayback(): void {
@@ -57,6 +58,7 @@ export class SoundManager {
 	// If playback time should be negative (because of negative offset), this returns 0
 	// Might be a problem later, but I can't find a better way
 	get song_playback_time(): number | undefined {
-		return this.song_instance?.seek;
+		if(this.song_instance === undefined) return undefined
+		return this.song_instance.seek - this.offset;
 	}
 }

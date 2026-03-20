@@ -1,7 +1,12 @@
 FOR NEXT RELEASE:
-- Finish song select
-- Make results screen look nice
-- Make song select
+- Make look nice:
+	- Main menu
+	- Song select
+	- Results screen
+	- Loading screens
+- Make charts
+
+BUGS:
 
 MISSING FEATURES:
 - Charting:
@@ -9,6 +14,7 @@ MISSING FEATURES:
 	- Group select and undo/redo in charting
 
 NICE TO HAVE:
+- Chart starts with delay if notes come right away (like stepmania)
 - Decrease lag
 - Rolls
 - Autoplay
@@ -16,6 +22,3 @@ NICE TO HAVE:
 - Beat lines
 - More gimmicks
 - Two modes of charting playback: Snap back to start OR keep position
-
-CODE TASKS (low-priority):
-- Use improvements from GroupTree to make an extension of BTree

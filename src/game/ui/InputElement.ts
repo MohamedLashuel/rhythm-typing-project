@@ -38,7 +38,6 @@ export class NumberSlider extends InputElement<NumberBar, number> {
 		})
 			.setInteractive()
 			.on('pointerdown', () => {
-				console.log("AAA")
 				this.game_obj.value = this.realValToSliderVal(this.params.default)
 			})
 		this.game_obj = scene.rexUI.add.numberBar({

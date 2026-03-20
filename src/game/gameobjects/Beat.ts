@@ -33,12 +33,11 @@ export class Beat {
 
 	// If aligned with the division, move by that division. Otherwise, snap to that division
 	addOrSnapToDivision(division: c.ValidDivision, dir: "forward" | "backward"): Beat {
-		// E.g. if this beat is in 4ths, we are already aligned with 8ths
-		if(!(division % this.division)) {
+		if(this.alignedWith(division)) {
 			// Add case
-			// If the divisions are different, convert to the given division
-			const ratio = division / this.division;
-			const new_idx = this.index * ratio + (dir === "forward" ? 1 : -1);
+			const converted_idx = this.index * division / this.division;
+			console.log(converted_idx)
+			const new_idx = converted_idx + (dir === "forward" ? 1 : -1);
 			return Beat.makeBeatHandleOverflow(this.measure, new_idx, division);
 		}
 		else return this.snapNextDivision(division, dir);
@@ -49,6 +48,12 @@ export class Beat {
 	// -----------------------------------------------
 	// HELPERS
 	// -----------------------------------------------
+
+	// Beat A is aligned with division d if (A.index + 1)/A.division = x/d for some integer x
+	// In plain terms, A's decimal value is equivalent to some decimal value in division d
+	alignedWith(division: number) {
+		return this.index * division % this.division === 0;
+	}
 
 	snapNextDivision(division: c.ValidDivision, dir: "forward" | "backward"): Beat {
 		const ratio = this.division / division;
