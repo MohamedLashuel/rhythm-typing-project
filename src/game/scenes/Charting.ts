@@ -24,6 +24,7 @@ export class Charting extends Scene
     preload ()
     {
         this.load.audio('song', this.song.audio_path);
+        this.load.audio("hit", "assets/hit.wav");
     }
 
     create ()

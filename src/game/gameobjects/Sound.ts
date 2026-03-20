@@ -27,6 +27,8 @@ export class SoundManager {
 			.start();
 	}
 
+	changeOffset(new_offset: number) { this.offset = new_offset; }
+
 	// Wrapper for playing sounds
 	play(...args: Parameters<Phaser.Sound.BaseSoundManager['play']>): boolean {
 		return this.scene.sound.play(...args)
@@ -55,8 +57,6 @@ export class SoundManager {
 		this.settings = settings.sound;
 	}
 
-	// If playback time should be negative (because of negative offset), this returns 0
-	// Might be a problem later, but I can't find a better way
 	get song_playback_time(): number | undefined {
 		if(this.song_instance === undefined) return undefined
 		return this.song_instance.seek - this.offset;

@@ -24,8 +24,7 @@ export class Gameplay extends Scene
     preload ()
     {
         this.load.audio("song", this.dt.song.audio_path);
-
-        this.load.audio("hit", "assets/hit.wav")
+        this.load.audio("hit", "assets/hit.wav");
     }
 
     create ()

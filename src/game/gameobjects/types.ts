@@ -17,7 +17,9 @@ export type EventTable = {
 	HOLD_CREATED: [Note],
 	PLAYBACK_START: [number],
 	PLAYBACK_STOP: [],
+	PLAY_HIT_SOUND: [],
 	SONG_PATH_CHANGED: [string],
+	OFFSET_CHANGED: [number],
 	SWITCH_CHART: [number],
 	TIMINGS_RECALCULATED: [Beat]
 	// Both

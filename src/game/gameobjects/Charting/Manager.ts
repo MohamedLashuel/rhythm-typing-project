@@ -30,8 +30,12 @@ export class ChartingManager {
 			{event: "PLAYBACK_START", fun: this.sound.startPlayback, context: this.sound}, 
 			{event: "PLAYBACK_STOP", fun: this.sound.stopPlayback, context: this.sound}
 		);
+		this.note_field.renderer.emitter.addListeners(
+			{event: "PLAY_HIT_SOUND", fun: this.sound.playHitSound, context: this.sound}
+		);
 		this.screens.emitter.addListeners(
 			{event: "SONG_PATH_CHANGED", fun: this.sound.changeSongPath, context: this.sound},
+			{event: "OFFSET_CHANGED", fun: this.sound.changeOffset, context: this.sound},
 			{event: "SWITCH_CHART", fun: this.note_field.changeChartIndex, context: this.note_field}
 		);
 		this.settings_tab.emitter.addListeners(

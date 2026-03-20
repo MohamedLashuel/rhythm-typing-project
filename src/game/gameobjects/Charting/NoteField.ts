@@ -38,8 +38,7 @@ export class ChartingNoteField {
 
 		const entities = initial_chart.createEntityMap();
 		this.logic = new ChartingLogic(initial_chart, entities);
-		this.renderer = new ChartingRenderer(scene, settings.render, 
-			this.current_chart, entities, pt);
+		this.renderer = new ChartingRenderer(scene, settings.render, this.current_chart, entities, pt);
 
 		this.logic.emitter.addListeners(
 			{event: "ENTITY_CREATED", fun: this.renderer.onEntityCreated, context: this.renderer},
@@ -162,6 +161,7 @@ export class ChartingNoteField {
 			this.resetPlaybackTime();
 		}
 		this.currently_playing = !this.currently_playing;
+		this.renderer.currently_playing = !this.renderer.currently_playing;
 	}
 
 	changeChartIndex(new_ind: number): void {
@@ -234,9 +234,11 @@ class ChartingLogic {
 
 		if(existing_note !== undefined) this.deleteEntity(beat, "note", existing_note);
 
-		const new_note = new Note(new_chars, this.chart.calculateBeatTiming(beat));
-		this.createEntity(beat, "note", new_note);
-		this.held = { beat: beat, note: new_note };
+		if(new_chars.length > 0) {
+			const new_note = new Note(new_chars, this.chart.calculateBeatTiming(beat));
+			this.createEntity(beat, "note", new_note);
+			this.held = { beat: beat, note: new_note };
+		}
 	}
 
 	deleteNoteAt(beat: Beat){
@@ -316,7 +318,9 @@ class ChartingLogic {
 class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 	active_range: Range<Beat> = { start: Beat.ZERO_BEAT(), end: Beat.ZERO_BEAT()}
 	cursor: Cursor = DEFAULT_CURSOR;
-	info_text: InfoText;
+	info_text: InfoText; 
+	currently_playing: boolean = false;
+	emitter: u.MyEmitter = new u.MyEmitter();
 
 	constructor(scene: Scene, settings: GameplaySettings["render"], chart: Chart, entities: EntityMap, 
 			pt: Point){
@@ -374,6 +378,15 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 	expandActiveRangeTo(beat: Beat): void {
 		if(Beat.compare(beat, this.active_range.end) > 0) this.active_range.end = beat;
 		if(Beat.compare(beat, this.active_range.start) < 0) this.active_range.start = beat;
+	}
+
+	// During playback, play a hit sound when a note occurs
+	override moveEntity(e: Entity): void {
+		const old_x = e.graphic.x;
+		super.moveEntity(e);
+		if(!(e instanceof Note)) return;
+		const crossed = old_x >= 0 && e.graphic.x < 0;
+		if(this.currently_playing && crossed) this.emitter.emit("PLAY_HIT_SOUND", []);
 	}
 
 	// -----------------------------------------------
