@@ -13,8 +13,7 @@ const window_sizes = JUDGMENTS.map(j => j.window ?? 0)
 export const HIT_BUFFER = Math.max(...window_sizes)
 export const HOLD_BUFFER = 0.25;
 
-export const EVENT_EXPIRY_TIME = 2;
-export const EVENT_PRELOAD_TIME = 2;
+export const ENTITY_LOAD_BUFFER = 2;
 export const DEFAULT_BPM = 120;
 
 export const VALID_DIVISIONS = [4, 8, 12, 16, 20, 24, 32, 48, 64, 92, 128, 192, 256] as const;

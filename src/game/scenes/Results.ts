@@ -10,15 +10,15 @@ export class Results extends Scene
         super('Results');
     }
 
-    init(data: ResultsData) {
+    init(data: ResultsData): void {
     	this.dt = data;
     }
 
-    preload () {
+    preload (): void {
 
     }
 
-    create ()
+    create (): void
     {
         this.cameras.main.fadeIn(1000, 0, 0, 0);
         this.cameras.main.setBackgroundColor(0x000000);
@@ -28,11 +28,11 @@ export class Results extends Scene
 		this.input.once('pointerdown', () => this.scene.start('MainMenu'));
     }
 
-    update () {
+    update (): void {
 
     }
 
-    makeResultsScreen() {
+    makeResultsScreen(): void {
     	this.add.text(100, 100, this.dt.song.song_name, {fontSize: 24});
     	this.add.text(100, 300, `Score: ${this.dt.score}`, {fontSize: 24});
     	const judgment_names: string[] = this.dt.judgments.map(j => j.name);

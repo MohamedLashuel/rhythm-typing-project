@@ -15,6 +15,9 @@ export type Range<T> = {
 
 export type NonEmptyArray<T> = [T, ...T[]];
 
+export type AtLeastOne<T, U = {[K in keyof T]: Pick<T, K> }> = Partial<T> & U[keyof U]
+
+
 export type Comparator<T> = (a: T, b: T) => number;
 export type ComparatorIfNecessary<T> = T extends string | number ? Comparator<T> | undefined : Comparator<T>
 

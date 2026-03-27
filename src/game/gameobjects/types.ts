@@ -1,5 +1,5 @@
 import { Beat } from "./Beat"
-import { Entity } from "./Entities/Entity"
+import { UsedEntity } from "./Entities/EntityGroup"
 import { Note } from "./Entities/Note"
 
 // An undefined window means one you can't hit normally
@@ -12,8 +12,8 @@ export type EventTable = {
 	SCORE_CHANGED: [number],
 	JUDGMENT_MADE: [Judgment],
 	// Charting
-	ENTITY_CREATED: [Entity, Beat],
-	ENTITY_DELETED: [Entity],
+	ENTITY_CREATED: [UsedEntity],
+	ENTITY_DELETED: [UsedEntity],
 	HOLD_CREATED: [Note],
 	PLAYBACK_START: [number],
 	PLAYBACK_STOP: [],

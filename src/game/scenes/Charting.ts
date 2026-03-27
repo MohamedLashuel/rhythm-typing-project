@@ -17,17 +17,17 @@ export class Charting extends Scene
         super('Charting');
     }
 
-    init(song: Song) {
+    init(song: Song): void {
         this.song = song;
     }
 
-    preload ()
+    preload (): void
     {
         this.load.audio('song', this.song.audio_path);
         this.load.audio("hit", "assets/hit.wav");
     }
 
-    create ()
+    create (): void
     {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x000000);
@@ -40,14 +40,14 @@ export class Charting extends Scene
         
     }
 
-    update ()
+    update (): void
     {
         this.updateDebug();
         this.manager.myUpdate();
     }
 
     // Used to display values for debugging
-    updateDebug (...obj: any[]){
+    updateDebug(...obj: any[]): void {
         this.debug_text.setText(obj.toString());
     }
 }

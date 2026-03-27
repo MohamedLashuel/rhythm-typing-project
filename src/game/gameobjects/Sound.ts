@@ -21,13 +21,13 @@ export class SoundManager {
 		this.song_instance?.once("complete", () => this.complete = true);
 	}
 
-	changeSongPath(new_path: string) {
+	changeSongPath(new_path: string): void {
 		this.scene.load.audio("song", new_path)
 			.once("filecomplete", () => this.trySetSongInstance())
 			.start();
 	}
 
-	changeOffset(new_offset: number) { this.offset = new_offset; }
+	changeOffset(new_offset: number): void { this.offset = new_offset }
 
 	// Wrapper for playing sounds
 	play(...args: Parameters<Phaser.Sound.BaseSoundManager['play']>): boolean {

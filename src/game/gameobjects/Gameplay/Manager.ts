@@ -32,7 +32,7 @@ export class GameplayManager {
        	this.sound.startPlayback();
 	}
 
-	myUpdate(){ 
+	myUpdate(): void { 
 		const pb_time = this.sound.song_playback_time;
 		if(pb_time === undefined) {
 			console.error("Playback time undefined - probably couldn't load song audio")

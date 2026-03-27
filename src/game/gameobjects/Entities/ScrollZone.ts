@@ -6,6 +6,7 @@ import * as g from '../../graphics';
 export class ScrollZone extends Entity {
 	mult: number;
 	declare end_timing: Timing;
+	override key = "scroll_zone" as const;
 	declare graphic: GameObjects.Graphics;
 
 	constructor(timing: Timing, end_timing: Timing, mult: number) {
@@ -13,7 +14,7 @@ export class ScrollZone extends Entity {
 		this.mult = mult;
 	}
 
-	override initialGraphic(scene: Scene, _settings: GameplaySettings["render"]): PhaserGraphic {
+	override initialGraphic(scene: Scene): PhaserGraphic {
 		return new GameObjects.Graphics(scene)
 	}
 
@@ -23,7 +24,7 @@ export class ScrollZone extends Entity {
 
 	override drawGraphic(_scene: Scene, settings: GameplaySettings["render"]): void {
 		const color = this.mult > 1 ? g.SPEED_ZONE_COLOR : g.SLOW_ZONE_COLOR;
-		const len = settings.base_scroll_speed * (this.end_pos - this.timing.scroll_pos);
+		const len = settings.base_scroll_speed * (this.end_timing.scroll_pos - this.timing.scroll_pos);
 		this.graphic
 			.fillStyle(color, 0.5)
 			.fillRect(0, - g.TRACK_HEIGHT / 2, len, g.TRACK_HEIGHT)

@@ -35,7 +35,7 @@ export class KeyboardManager {
 	// HOLDING KEYS
 	// -----------------------------------------------
 
-	onKeyHeld(key: string, time_seconds: number, fun: () => void){
+	onKeyHeld(key: string, time_seconds: number, fun: () => void): void {
 		this.watching_holds[key] = { time: time_seconds * 1000, fun: fun };
 	}
 
@@ -55,7 +55,7 @@ export class KeyboardManager {
 class KeyboardEventQueue {
 	data: KeyboardEvent[] = [];
 
-	push(event: KeyboardEvent){
+	push(event: KeyboardEvent): void {
 		this.data.push(event);
 	}
 

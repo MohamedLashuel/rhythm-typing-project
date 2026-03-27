@@ -10,27 +10,24 @@ const sidebar_width = g.SETTINGS_WIDTH_PCT;
 const elem_width = sidebar_width - 5;
 
 // We define this outside of the class so we can use its type for the sidebar property
-function settingsSidebarSpec() {
-	return {
-		Rendering: {
-			"Scroll Speed": new NumberSlider( { default: 400, min: 100, max: 600, step: 5}, elem_width)
-		},
-		Sound: {
-			"Music Rate": new NumberSlider( { default: 1, min: 0.1, max: 4, step: 0.05}, elem_width),
-			"Music Volume": new NumberSlider( { default: 0.5, min: 0, max: 1, step: 0.05}, elem_width),
-			"Hitsound Volume": new NumberSlider( { default: 0.5, min: 0, max: 1, step: 0.05}, elem_width)
-		}
-	} as const satisfies SidebarSpec;
-} 
-type SettingsSpecType = ReturnType<typeof settingsSidebarSpec>;
+const settings_sidebar_spec = {
+	Rendering: {
+		"Scroll Speed": new NumberSlider( { default: 400, min: 100, max: 600, step: 5}, elem_width)
+	},
+	Sound: {
+		"Music Rate": new NumberSlider( { default: 1, min: 0.1, max: 4, step: 0.05}, elem_width),
+		"Music Volume": new NumberSlider( { default: 0.5, min: 0, max: 1, step: 0.05}, elem_width),
+		"Hitsound Volume": new NumberSlider( { default: 0.5, min: 0, max: 1, step: 0.05}, elem_width)
+	}
+} as const satisfies SidebarSpec
 
 export class SettingsTab {
-	sidebar: InputSidebar<SettingsSpecType>;
+	sidebar: InputSidebar<typeof settings_sidebar_spec>;
 	active: boolean;
 	emitter: u.MyEmitter = new u.MyEmitter();
 
 	constructor(scene: Scene) {
-		const spec = settingsSidebarSpec();
+		const spec = settings_sidebar_spec;
 
 		this.sidebar = new InputSidebar(scene, g.SETTINGS_THEME, "Settings", sidebar_width, 
 			g.DEPTHS.settings_sidebar, g.DEPTHS.settings_elements, spec);
@@ -50,12 +47,12 @@ export class SettingsTab {
 	}
 
 	toggle(): void {
-		this.active ? this.deactivate() : this.activate();
+		if(this.active) this.deactivate() ; else this.activate();
 	}
 
 	getSettings(): GameplaySettings {
 		const keys: RemapLeaves<GameplaySettings, 
-				[keyof SettingsSpecType, Layer2Keys<SettingsSpecType>]> = 
+				[keyof typeof settings_sidebar_spec, Layer2Keys<typeof settings_sidebar_spec>]> = 
 		{
 			render: {
 				base_scroll_speed: ["Rendering", "Scroll Speed"]

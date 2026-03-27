@@ -17,17 +17,17 @@ export class Gameplay extends Scene
         super('Gameplay');
     }
 
-    init(data: GameplayData) {
+    init(data: GameplayData): void {
         this.dt = data;
     }
 
-    preload ()
+    preload (): void
     {
         this.load.audio("song", this.dt.song.audio_path);
         this.load.audio("hit", "assets/hit.wav");
     }
 
-    create ()
+    create (): void
     {
         this.cameras.main.setBackgroundColor(0x000000);
 
@@ -37,11 +37,10 @@ export class Gameplay extends Scene
     }
 
     get chart(): Chart {
-        return this.dt.song.charts[this.dt.chart_index] as Chart;
+        return this.dt.song.charts[this.dt.chart_index]!;
     }
 
-    update (_time: number, _delta_ms: number)
-    {
+    update(_time: number, _delta_ms: number): void {
         this.updateDebug();
         if( this.manager.isComplete() ) {
             if(!this.is_fading) this.finishChart();
@@ -52,11 +51,11 @@ export class Gameplay extends Scene
     }
 
     // Used to display values for debugging
-    updateDebug (obj?: any){
+    updateDebug (obj?: any): void {
         this.debug_text.setText((obj ?? "").toString());
     }
 
-    finishChart() {
+    finishChart(): void {
         this.is_fading = true;
         
         this.cameras.main.once('camerafadeoutcomplete', () => {

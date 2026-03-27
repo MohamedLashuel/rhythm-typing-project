@@ -5,10 +5,13 @@ import { Character } from "../../helpers/types";
 
 // This class stores functions to perform actions together with functions that undo them,
 // making it easy to implement undo and redo in the charting editor
-export type ChartingAction<E, U = E> = {
+
+// Has to be a class and not just an object because storing an array of objects with generic functions is 
+// impossible to do type-safely in typescript
+export abstract class ChartingAction<E, U = E> {
 	// Execute returns the data that undo needs, because that data might have to be calculated during execution
-	execute: (nf: ChartingNoteField, data: E) => U;
-	undo: (nf: ChartingNoteField, data: U) => void;
+	abstract execute(nf: ChartingNoteField, data: E):  U
+	abstract undo(nf: ChartingNoteField, data: U): void
 }
 
 export type ChartingActionWithData<E, U = E> = {

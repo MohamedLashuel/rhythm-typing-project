@@ -5,15 +5,15 @@ import * as g from '../../graphics'
 import * as actions from './Actions'
 import { Entity } from '../Entities/Entity';
 import { Beat } from '../Beat';
-import { EntityMap, Chart, EntityMapEntry, Song } from "../Song"
+import { EntityMap, Chart, Song } from "../Song"
 import { NoteFieldRenderer } from '../NoteFieldRenderer';
 import { Note } from '../Entities/Note';
 import { BpmMarker } from '../Entities/BpmMarker';
 import InputText from 'phaser3-rex-plugins/plugins/inputtext';
 import { ScrollZone } from '../Entities/ScrollZone';
-import { EntityGroup, EntityKey } from '../Entities/EntityGroup';
+import { EntityGroup, EntityKey, UsedEntity } from '../Entities/EntityGroup';
 import { GameplaySettings } from '../types';
-import { Character, Point, Range } from '../../helpers/types';
+import { Character, Point } from '../../helpers/types';
 
 type Cursor = { position: Beat, increment: c.ValidDivision }
 const DEFAULT_CURSOR: Readonly<Cursor> = { position: Beat.ZERO_BEAT(), increment: 4 }
@@ -29,7 +29,7 @@ export class ChartingNoteField {
 	playback_time: number = 0;
 	currently_playing: boolean = false;
 	emitter: u.MyEmitter = new u.MyEmitter();
-	action_queue: actions.ChartingActionWithData<any>[] = [];
+	action_queue: actions.ChartingActionWithData<unknown>[] = [];
 
 	constructor(scene: Scene, pt: Point, song: Song, initial_chart: Chart, 
 			settings: GameplaySettings){
@@ -56,7 +56,7 @@ export class ChartingNoteField {
 		}
 	}
 
-	updateSettings(settings: GameplaySettings) {
+	updateSettings(settings: GameplaySettings): void {
 		this.renderer.settings = settings.render;
 	}
 
@@ -134,9 +134,7 @@ export class ChartingNoteField {
 	}
 
 	moveCursorBy(increment: c.ValidDivision, dir: "forward" | "backward"): void {
-		console.log(this.cursor.position)
 		const new_pos = this.cursor.position.addOrSnapToDivision(increment, dir);
-		console.log(new_pos)
 		if(new_pos.measure < 0) return;
 		this.moveCursorTo(new_pos);
 	}
@@ -146,7 +144,7 @@ export class ChartingNoteField {
 		return u.clampedIndex(new_index, c.VALID_DIVISIONS);
 	}
 
-	changeCursorIncrement(dir: "increase" | "decrease"){
+	changeCursorIncrement(dir: "increase" | "decrease"): void {
 		const new_inc = this.movedCursorIncrement(this.cursor.increment, dir);
 		this.cursor.increment = new_inc;
 		this.logic.cursor.increment = new_inc;
@@ -227,7 +225,7 @@ class ChartingLogic {
 		public chart: Chart,
 		public entities: EntityMap){}
 
-	placeOrRemoveChar(beat: Beat, char: Character){
+	placeOrRemoveChar(beat: Beat, char: Character): void {
 		const existing_note = this.entities.getProp(beat, "note");
 		const new_chars = (existing_note === undefined) ? [char] 
 			: u.toggleInclusion(existing_note.chars, char);
@@ -241,7 +239,7 @@ class ChartingLogic {
 		}
 	}
 
-	deleteNoteAt(beat: Beat){
+	deleteNoteAt(beat: Beat): void {
 		const existing_note = this.entities.getProp(beat, "note");
 		if(existing_note !== undefined) this.deleteEntity(beat, "note", existing_note);
 	}
@@ -262,7 +260,7 @@ class ChartingLogic {
 		return marker.bpm;
 	}
 
-	placeScrollZonePoint(beat: Beat, requester: NumberRequester){
+	placeScrollZonePoint(beat: Beat, requester: NumberRequester): void {
 		if(this.zone_point === undefined){
 			// Setting first point
 			this.zone_point = beat;
@@ -283,22 +281,22 @@ class ChartingLogic {
 
 	}
 
-	createEntity<P extends EntityKey>(beat: Beat, prop: P, ent: EntityGroup[P]) {
+	createEntity<P extends EntityKey>(beat: Beat, prop: P, ent: EntityGroup[P]): void {
 		this.entities.setProp(beat, prop, ent);
-		this.emitter.emit("ENTITY_CREATED", [ent, beat]);
+		this.emitter.emit("ENTITY_CREATED", [ent]);
 	}
 
-	deleteEntity<P extends EntityKey>(beat: Beat, prop: P, ent: EntityGroup[P]) {
+	deleteEntity<P extends EntityKey>(beat: Beat, prop: P, ent: EntityGroup[P]): void {
 		this.entities.deleteProp(beat, prop);
 		this.emitter.emit("ENTITY_DELETED", [ent]);
 	}
 
-	recalculateTimings(beat: Beat) {
+	recalculateTimings(beat: Beat): void {
 		this.chart.recalculateEntityTimings(this.entities, beat);
 		this.emitter.emit("TIMINGS_RECALCULATED", [beat]);
 	}
 
-	handleKeyUp(event: KeyboardEvent){
+	handleKeyUp(event: KeyboardEvent): void {
 		const key = event.key;
 		if(!u.isChar(key)
 			|| this.held === undefined
@@ -315,8 +313,7 @@ class ChartingLogic {
 	}
 }
 
-class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
-	active_range: Range<Beat> = { start: Beat.ZERO_BEAT(), end: Beat.ZERO_BEAT()}
+class ChartingRenderer extends NoteFieldRenderer {
 	cursor: Cursor = DEFAULT_CURSOR;
 	info_text: InfoText; 
 	currently_playing: boolean = false;
@@ -327,57 +324,6 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 		super(scene, settings, chart, entities, pt);
 		this.info_text = new InfoText(scene, { beat: 0, pb_time: 0, increment: DEFAULT_CURSOR.increment });
 		this.add(this.info_text);
-	}
-
-	// -----------------------------------------------
-	// NOTEFIELDRENDERER IMPLEMENTATION
-	// -----------------------------------------------
-
-	override initialActiveRange(): Range<Beat> {
-		return { start: Beat.ZERO_BEAT(), end: Beat.ZERO_BEAT() }
-	}
-
-	// maxKey on note map returns undefined if there are no keys. In this case, return the zero beat
-	entitiesSafeMaxKey(): Beat {
-		return this.entities.maxKey() ?? Beat.ZERO_BEAT();
-	}
-
-	override entitiesToArray(entities: EntityMap): Entity[] {
-		return u.flatProperties(entities.valuesArray());
-	}
-
-	// Return note entries after a key while a predicate returns true
-	takeEntriesFromKeyWhile(key: Beat, pred: (a: EntityMapEntry) => boolean, 
-		dir: "forward" | "backward" = "forward")
-			: [EntityMapEntry[], EntityMapEntry | undefined] {
-		const itr = (dir === "backward") ? this.entities.entriesReversed(key) : this.entities.entries(key);
-		return u.iterateWhile(itr, ([k, v]) => pred([k, v]))
-	}
-
-	override findEntitiesFromIndexWhile(index: Beat, dir: "forward" | "backward", 
-			pred: (e: Entity) => boolean): [Entity[], Beat] {
-		const [entries, last_entry] = this.takeEntriesFromKeyWhile(index,
-			([_k, v]) => {
-				const entity_maybe = Object.values(v)[0];
-				if(entity_maybe === undefined) console.error("Iterated through empty entity group")
-				return entity_maybe === undefined ? true : pred(entity_maybe);
-			}, dir);
-		const default_val = (dir === "forward") ? this.entitiesSafeMaxKey() : Beat.ZERO_BEAT();
-		const entities = entries.map( ( [_k, v] ) => v).map(g => Object.values(g)).flat();
-		return [entities, (last_entry === undefined) ? default_val : last_entry[0]];
-	}
-
-	override get active_entities(): Entity[] {
-		const [active_entries, _last] = 
-			this.takeEntriesFromKeyWhile(this.active_range.start, 
-				([k, _v]) => Beat.compare(k, this.active_range.end) <= 0)
-		return u.flatProperties(active_entries.map( ([_k, v]) => v))
-	}
-
-	// Expand the active range to ensure it covers the provided beat
-	expandActiveRangeTo(beat: Beat): void {
-		if(Beat.compare(beat, this.active_range.end) > 0) this.active_range.end = beat;
-		if(Beat.compare(beat, this.active_range.start) < 0) this.active_range.start = beat;
 	}
 
 	// During playback, play a hit sound when a note occurs
@@ -404,17 +350,14 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 		this.info_text.increment.setText(new_inc.toString());
 	}
 
-	onEntityCreated(ent: Entity, beat: Beat): void {
+	onEntityCreated(ent: UsedEntity): void {
 		this.addEntity(ent);
-		this.expandActiveRangeTo(beat);
-		// Because active range now includes beat, ent is definitely within the active range
-		// and should be visible
-		ent.activate();
 		// E.g. notes will already be at the right spot, but e.g. scroll zones might not be
 		this.moveEntity(ent);
 	}
 
-	onEntityDeleted(ent: Entity): void {
+	onEntityDeleted(ent: UsedEntity): void {
+		this.deleteEntity(ent);
 		this.entity_container.remove(ent.graphic);
 		ent.deactivate();
 	}
@@ -425,7 +368,10 @@ class ChartingRenderer extends NoteFieldRenderer<EntityMap, Beat> {
 
 	// If any active notes had timings recalculated, just reset all active notes 
 	onTimingsRecalculated(at: Beat): void {
-		if(Beat.compare(this.active_range.end, at) > 0) this.resetWhichEntitiesActive(this.cursor.position);
+		const pos = this.chart.calculateBeatTiming(at).scroll_pos;
+		if(this.active_range === undefined || pos > this.active_range.left.key) 
+			this.resetWhichEntitiesActive(pos);
+		
 		this.entities.forEachProp(e => {
 			if(e.end_timing !== undefined) e.draw(this.scene, this.settings);
 		})

@@ -30,7 +30,7 @@ export class ScreenManager {
 	}
 
 	get chart(): Chart {
-		return this.song.charts[this.chart_index] as Chart;
+		return this.song.charts[this.chart_index]!;
 	}
 
 	// Trying to activate a screen while a different one is active is OK
@@ -49,7 +49,7 @@ export class ScreenManager {
 	}
 
 	toggleScreen(type: ScreenType): void {
-		(this.active_screen === type) ? this.deactivateActiveScreen() : this.activateScreen(type);
+		if(this.active_screen === type) this.deactivateActiveScreen() ; else this.activateScreen(type);
 	}
 
 	isActive(): boolean {
@@ -125,9 +125,9 @@ class SongProps extends Screen {
 	}
 
 	override prepopulate(mgr: ScreenManager): void {
-		this.song_name_input.setText(mgr.song.song_name.toString());
-		this.audio_path_input.setText(mgr.song.audio_path.toString());
-		this.audio_credit_input.setText(mgr.song.audio_credit.toString());
+		this.song_name_input.setText(mgr.song.song_name);
+		this.audio_path_input.setText(mgr.song.audio_path);
+		this.audio_credit_input.setText(mgr.song.audio_credit);
 	}
 
 	override saveChanges(mgr: ScreenManager): void {
@@ -177,7 +177,7 @@ class ChartList extends Screen {
                     return button;
                 },
 
-                onButtonClick: function (button) {
+                onButtonClick: function (button: Phaser.GameObjects.GameObject) {
                     this.text = (button as any).text;
                     this.value = (button as any).value;
                 }
@@ -213,7 +213,7 @@ class ChartList extends Screen {
 		const old_charts = mgr.song.charts;
 		const new_charts: Chart[] = this.selector.options.map(o => {
 			if(o.value >= old_charts.length) return new Chart();
-			else return (old_charts[o.value] as Chart)
+			else return (old_charts[o.value]!)
 		})
 
 		// Switch chart if necessary

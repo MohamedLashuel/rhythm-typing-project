@@ -1,36 +1,36 @@
 import { Scene, GameObjects } from "phaser";
 import { Entity } from "./Entities/Entity";
-import { Chart } from "./Song";
+import { Chart, EntityMap } from "./Song";
+import * as u from '../helpers/utils';
 import * as c from '../config';
 import * as g from '../graphics';
 import { GameplaySettings } from "./types";
 import { Point, Range } from "../helpers/types";
+import { EntityGroup, UsedEntity } from "./Entities/EntityGroup";
+import { GroupTree, RBIterator } from "../helpers/RBTree";
 
 export type UpdateDirection = "forward" | "backward" | "expand" | "contract";
-/*
-Gameplay and charting renderers use different data structures to store entities.
-Also, they both only process and render a few entities at a time rather than all entities at once.
-We use an abstract class and implement these features differently in both.
-The second generic parameter is the index used to access the data structure
-*/
-export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof EntityStructType>
-		extends GameObjects.Container {
+
+// Undefined used if there are no entities to iterate through
+type EntityRange = { left: REC_Itr, right: REC_Itr } | undefined
+
+export abstract class NoteFieldRenderer extends GameObjects.Container {
 	entity_container: GameObjects.Container;
 	track_container: TrackContainer;
-	entities: EntityStructType;
+	entities: RendererEntityContainer;
 	playback_time: number = 0;
 	scroll_position: number = 0;
 	current_scroll_mod: number = 1;
 	settings: GameplaySettings["render"];
 	chart: Chart;
-	active_range: Range<EntityIndex>;
+	active_range: EntityRange
 
 	// -----------------------------------------------
 	// INITIALIZATION
 	// -----------------------------------------------
 
 	constructor(scene: Scene, settings: GameplaySettings["render"],
-			chart: Chart, entities: EntityStructType, pt: Point){
+			chart: Chart, entities: EntityMap, pt: Point){
 		super(scene, pt.x, pt.y);
 
 		this.settings = settings;
@@ -44,43 +44,58 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 		this.loadChart(chart, entities);
 	}
 
-	loadChart(chart: Chart, chart_entities: EntityStructType) {
+	loadChart(chart: Chart, chart_entities: EntityMap): void {
 		this.chart = chart;
-		this.entities = chart_entities;
+		this.entities = new RendererEntityContainer(chart_entities);
 
 		this.entity_container.removeAll(true);
-		this.entitiesToArray(chart_entities).forEach(e => {
-			this.addEntity(e);
+		chart_entities.forEachProp(e => {
+			this.drawEntity(e);
 			e.deactivate();
-		});
+		})
 
-		this.active_range = this.initialActiveRange();
+		this.active_range = this.entities.initialIterators();
 		this.scrollToTime(0);
-
 	}
-
-	abstract initialActiveRange(): Range<EntityIndex>
-
-	abstract entitiesToArray(entities: EntityStructType): Entity[];
 
 	// -----------------------------------------------
 	// MAIN FUNCTIONALITY
 	// -----------------------------------------------
 
-	addEntity(entity: Entity) {
+	addEntity(entity: UsedEntity): void {
+		this.entities.addEntity(entity);
+		this.drawEntity(entity);
+	}
+
+	deleteEntity(entity: UsedEntity): void { 
+		if(this.active_range !== undefined){
+			const new_range: { left: REC_Itr | undefined, right: REC_Itr | undefined } = this.active_range;
+			// Check if either iterator is both pointing to the entity and the whole group will be deleted
+			console.log(this.active_range.left.value)
+			if(u.objectsEqual(this.active_range.left.value, { [entity.key]: entity } )){
+				new_range.left = this.active_range.left.prev()
+			}
+			if(u.objectsEqual(this.active_range.right.value, { [entity.key]: entity } )){
+				new_range.right = this.active_range.right.next()
+			}
+			this.active_range = bubbleUpUndefined(new_range);
+		}
+		this.entities.deleteEntity(entity) 
+	};
+
+	drawEntity(entity: Entity): void {
 		entity.draw(this.scene, this.settings);
 		this.entity_container.add(entity.graphic);
 	}
 
-	redraw(entity: Entity) {
-		this.entity_container.remove(entity.graphic);
-		this.addEntity(entity);
+	redraw(entity: Entity): void {
+		entity.draw(this.scene, this.settings);
 	}
 
-	scrollToTime(time: number){
+	scrollToTime(time: number): void {
 		const dir = time >= this.playback_time ? "forward" : "backward";
 		this.updateScroll(time);
-		this.updateWhichEntitiesActive(dir);
+		this.active_range = this.entities.updateActiveRange(this.active_range, dir, this.track_positions);
 		this.moveActiveEntities();
 		this.playback_time = time;
 	}
@@ -93,7 +108,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	}
 
 	moveActiveEntities(): void {
-		this.active_entities.forEach(e => this.moveEntity(e));
+		this.active_entities.forEach(e => this.moveEntity(e) );
 	}
 
 	moveEntity(e: Entity): void { 
@@ -102,8 +117,7 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 
 	setBaseScrollSpeed(speed: number): void {
 		this.settings.base_scroll_speed = speed;
-		this.updateWhichEntitiesActive("forward");
-		this.updateWhichEntitiesActive("backward");
+		this.active_range = this.entities.updateActiveRange(this.active_range, "expand", this.track_positions)
 		this.moveActiveEntities();
 	}
 
@@ -111,72 +125,34 @@ export abstract class NoteFieldRenderer<EntityStructType, EntityIndex = keyof En
 	// HELPERS
 	// -----------------------------------------------
 
-	// The scroll position of the start of the track where entities appear from
+	get current_scroll_speed(): number {
+		return this.settings.base_scroll_speed * this.current_scroll_mod;
+	}
+
+	// The scroll position of the start and end of the track where entities appear from, plus a buffer
 	// Derived by solving for scroll position in the formula for entity x 
-	get track_start_pos(): number {
-		return g.WIDTH / this.settings.base_scroll_speed + this.scroll_position;
-	}
-
-	get track_end_pos(): number {
-		return this.x / this.settings.base_scroll_speed + this.scroll_position;
-	}
-
-	// Correctly returns negative time if the entity is past pos
-	timeUntilEntityReachesPos(entity: Entity, pos: number, count_from_end: boolean): number {
-		const entity_pos = count_from_end ? entity.end_pos : entity.timing.scroll_pos;
-		return entity_pos - pos;
-	}
-	
-	willEntityAppearSoon(entity: Entity){
-		return this.timeUntilEntityReachesPos(entity, this.track_start_pos, false) < c.EVENT_PRELOAD_TIME;
-	}
-
-	isEntityNotExpiredYet(entity: Entity){
-		return this.timeUntilEntityReachesPos(entity, this.track_end_pos, true) >= -c.EVENT_EXPIRY_TIME;
+	get track_positions(): { left: number, right: number } {
+		const buffer = c.ENTITY_LOAD_BUFFER * this.current_scroll_speed;
+		return { 
+			left: g.WIDTH / this.settings.base_scroll_speed + this.scroll_position - buffer,
+			right: this.x / this.current_scroll_speed + this.scroll_position + buffer
+		};
 	}
 
 	// -----------------------------------------------
 	// MANAGING EVENT ACTIVITY
 	// -----------------------------------------------
 
-	abstract get active_entities(): Entity[]
-
-	updateWhichEntitiesActive(dir: "forward" | "backward" | "expand" | "contract"): void {
-		const data: Record<typeof dir, Range<["forward" | "backward", "activate" | "deactivate"]>> = {
-			forward: { start: ["forward", "deactivate"], end: ["forward", "activate"]},
-			backward: { start: ["backward", "activate"], end: ["backward", "deactivate"]},
-			expand: { start: ["backward", "activate"], end: ["forward", "activate"]},
-			contract: { start: ["forward", "deactivate"], end: ["backward", "deactivate"]},
-		}
-		const entry = data[dir];
-		this.setEntityActivity(this.active_range.start, "start", entry.start[0], entry.start[1]);
-		this.setEntityActivity(this.active_range.end, "end", entry.end[0], entry.end[1]);
+	get active_entities(): Entity[] {
+		return this.entities.entitiesInRange(this.active_range, this.track_positions);
 	}
-
-	setEntityActivity(from_index: EntityIndex, range_side: "start" | "end", dir: "forward" | "backward",
-		toggle: "activate" | "deactivate"): void {
-		const fun1 = (range_side === "end") ? 
-			(e: Entity) => this.willEntityAppearSoon(e) :
-			(e: Entity) => this.isEntityNotExpiredYet(e);
-		const fun2 = (toggle === "activate") ? (e: Entity) => fun1(e) : (e: Entity) => !fun1(e);
-
-		const [to_toggle, last_ind] = this.findEntitiesFromIndexWhile(from_index, dir, fun2);
-
-		this.active_range[range_side] = last_ind;
-
-		const fun = toggle === "activate" ? (e: Entity) => e.activate() : (e: Entity) => e.deactivate();
-		to_toggle.map(fun);
-	}
-
-	// Returns entities and the last index to set the active range
-	abstract findEntitiesFromIndexWhile(index: EntityIndex, dir: "forward" | "backward"
-		, pred: (e: Entity) => boolean): [Entity[], EntityIndex]
 
 	// In the case of making a big jump, it's faster to start the active range from scratch
-	resetWhichEntitiesActive(from_ind: EntityIndex): void {
+	resetWhichEntitiesActive(at: number): void {
 		this.active_entities.map(e => e.deactivate());
-		this.active_range = { start: from_ind, end: from_ind };
-		this.updateWhichEntitiesActive("expand");
+		this.active_range = this.entities.updateActiveRange(
+			this.entities.floorIterator(at), "expand", this.track_positions
+		)
 		this.moveActiveEntities();
 	}
 }
@@ -196,4 +172,122 @@ class TrackContainer extends GameObjects.Container {
 
 	    this.add( [ this.track, this.receptor, this.center_line ]);
 	}
+}
+
+type REC_Itr = RBIterator<number, Partial<EntityGroup>>
+
+class RendererEntityContainer {
+	// Start tree is indexed by start position, end tree is indexed by end position
+	// Start tree keeps an iterator pointing at the end of the track, end tree the start
+	start_tree: GroupTree<number, EntityGroup>
+	end_tree: GroupTree<number, EntityGroup>
+
+	constructor(tree: EntityMap) {
+		// Each value is guaranteed to have at least one entity, so take that
+		this.start_tree = tree.mapKeys((_k, v) => {
+			return (Object.values(v)[0] as Entity).timing.scroll_pos
+		}, undefined);
+
+		this.end_tree = new GroupTree(undefined)
+		tree.forEachProp((ent, _timing, prop) => this.end_tree.setProp(ent.end_pos, prop, ent));
+	}
+
+	addEntity(entity: UsedEntity): void {
+		this.start_tree.setProp(entity.timing.scroll_pos, entity.key, entity);
+		this.end_tree.setProp(entity.timing.scroll_pos, entity.key, entity);
+	}
+
+	deleteEntity(entity: UsedEntity): void {
+		this.start_tree.deleteProp(entity.timing.scroll_pos, entity.key);
+		this.end_tree.deleteProp(entity.timing.scroll_pos, entity.key);
+	}
+
+	initialIterators(): EntityRange {
+		return bubbleUpUndefined({
+			left: this.start_tree.startItr(),
+			right: this.end_tree.startItr()
+		});
+	}
+
+	floorIterator(key: number): EntityRange {
+		return bubbleUpUndefined({
+			left: this.end_tree.floorIterator(key),
+			right: this.start_tree.floorIterator(key)
+		});
+	}
+
+	entitiesInRange(initial_itrs: EntityRange, track_pos: { left: number, right: number }): Entity[] {
+		if(initial_itrs === undefined) return [];
+		// Get all entities whose end times are in the range
+		const entries1 = this.entitiesUntilKey(initial_itrs.left, track_pos.right)[0];
+		// Get the entities we missed - the ones whose start times are in range but their end times are late
+		const entries2 = this.entitiesUntilKey(initial_itrs.right, track_pos.left)[0]
+			.filter(e => e.end_timing !== undefined && 
+				e.end_timing.scroll_pos < track_pos.left);
+		return entries1.concat(entries2)
+	}
+
+	updateActiveRange(itrs: EntityRange, dir: UpdateDirection, track_pos: { left: number, right: number })
+			: EntityRange {
+		const data: Record<UpdateDirection, Range<["forward" | "backward", "activate" | "deactivate"]>> = {
+			forward: { start: ["forward", "deactivate"], end: ["forward", "activate"]},
+			backward: { start: ["backward", "activate"], end: ["backward", "deactivate"]},
+			expand: { start: ["backward", "activate"], end: ["forward", "activate"]},
+			contract: { start: ["forward", "deactivate"], end: ["backward", "deactivate"]},
+		}
+		const entry = data[dir];
+
+		// If iterators are undefined (no entities), check again - if there are still no entities return
+		if(itrs === undefined) {
+			itrs = this.initialIterators();
+			if(itrs === undefined) return undefined;
+		}
+
+		return {
+			left: this.advanceIterator(
+				itrs.left, entry.start[0], entry.start[1], track_pos.left),
+			right: this.advanceIterator(
+				itrs.right, entry.end[0], entry.end[1], track_pos.right)
+		}
+	}
+
+	advanceIterator(itr: REC_Itr, dir: "forward" | "backward", 
+			toggle: "activate" | "deactivate", pos: number): REC_Itr {
+		const [to_toggle, new_itr] = this.entitiesUntilKey(itr, pos, dir)
+		const toggle_fun = (toggle === "activate") ? (e:Entity) => e.activate() : (e:Entity) => e.deactivate()
+		to_toggle.forEach(toggle_fun);
+		return new_itr;
+	}
+
+	forEachProp(fun: (e: Entity, k: number, p: keyof EntityGroup) => void): void {
+		this.start_tree.forEachProp(fun);
+	}
+
+	// Returns entries and new iterator
+	entitiesUntilKey(itr: REC_Itr, key: number, dir: "forward" | "backward" = "forward")
+			: [Entity[], REC_Itr] {
+		const sofar = [];
+
+		const cond = (dir === "forward")
+			? (itr: REC_Itr) => itr.key <= key 
+			: (itr: REC_Itr) => itr.key >= key
+		const op = (dir === "forward")
+			? (itr: REC_Itr) => itr.next() 
+			: (itr: REC_Itr) => itr.prev()
+			
+		while(cond(itr)){
+			sofar.push(itr.value);
+			const result = op(itr);
+			if(result === undefined) break;
+			itr = result;
+		}
+		const entities = sofar.flatMap(group => Object.values(group));
+		return [entities, itr];
+	}
+}
+
+function bubbleUpUndefined(itrs: { left: REC_Itr | undefined, right: REC_Itr | undefined}): EntityRange {
+	if(itrs.left === undefined || itrs.right === undefined) return undefined;
+	// Doing it like this is needed for typescript
+	return { left: itrs.left, right: itrs.right };
 }

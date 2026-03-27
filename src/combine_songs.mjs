@@ -1,5 +1,5 @@
+/* eslint-disable no-undef */
 import { readdirSync, readFileSync, writeFileSync } from "fs";
-import { cwd } from "process";
 
 // Since JS doesn't support listing out files of directories, we have to know in advance the locations of
 // the song JSONs to load. This script is run during building and combines all song JSONs to a single file.

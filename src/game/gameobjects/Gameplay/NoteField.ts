@@ -1,12 +1,12 @@
 import { Scene } from 'phaser';
 import * as u from '../../helpers/utils'
 import * as c from '../../config'
-import { Entity } from '../Entities/Entity';
-import { Chart } from "../Song"
+import { Timing } from '../Entities/Entity';
+import { Chart, EntityMap } from "../Song"
 import { NoteFieldRenderer } from '../NoteFieldRenderer';
 import { KeyboardManager } from '../KeyboardManager';
 import { Note } from '../Entities/Note';
-import { Character, Point, Range } from '../../helpers/types';
+import { Character, Point } from '../../helpers/types';
 import { GameplaySettings, Judgment } from '../types';
 
 export class GameplayNoteField {
@@ -16,11 +16,9 @@ export class GameplayNoteField {
 
 	constructor(scene: Scene, chart: Chart, settings: GameplaySettings, 
 			keyboard: KeyboardManager, pt: Point) {
-		const entities = chart.createEntityMap().valuesArray();
-		const notes = entities.map(e => e.note).filter(v => v !== undefined);
-
-		this.logic = new GameplayLogic(notes);
-		this.renderer = new GameplayRenderer(scene, settings.render, chart, u.flatProperties(entities), pt);
+		const entities = chart.createEntityMap();
+		this.logic = new GameplayLogic(entities);
+		this.renderer = new GameplayRenderer(scene, settings.render, chart, entities, pt);
 		this.logic.emitter.addListeners(
 			{ event: "NOTE_FINISH", fun: this.renderer.onNoteFinish, context: this.renderer },
 			{ event: "NOTE_HIT", fun: this.renderer.onNoteHit, context: this.renderer }
@@ -30,7 +28,7 @@ export class GameplayNoteField {
 		this.keyboard = keyboard;
 	}
 
-	myUpdate(time: number) {
+	myUpdate(time: number): void {
 		this.renderer.scrollToTime(time);
 		this.logic.myUpdate(time);
 		this.keyboard.handleQueues(evt => this.logic.processKeyDownEvent(evt),
@@ -42,7 +40,7 @@ export class GameplayNoteField {
 class GameplayLogic {
 	notes: Note[];
 
-	held_note: Note | undefined = undefined;
+	held_note: (Note & { end_timing: Timing }) | undefined = undefined;
 	playback_time: number = 0;
 	// Notes before this index can't be hit. Used to cut down on processing
 	current_index: number = 0;
@@ -50,8 +48,11 @@ class GameplayLogic {
 	score: number = 0;
 	judgments: Judgment[] = [];
 
-	constructor(notes: Note[]){
-		this.notes = notes;
+	constructor(entities: EntityMap){
+		this.notes = entities
+			.valuesArray()
+			.map(group => group.note)
+			.filter(n => n !== undefined);
 	}
 
 	// -----------------------------------------------
@@ -69,7 +70,7 @@ class GameplayLogic {
 		const key = event.key;
 		if(!u.isChar(key) || this.held_note === undefined) return;
 		if(this.held_note.chars.includes(key) && 
-			(this.playback_time - this.held_note.end_time < c.HOLD_BUFFER) ){
+			(this.playback_time - this.held_note.end_timing.time < c.HOLD_BUFFER) ){
 			this.held_note = undefined;
 			this.makeMissJudgment();
 		}
@@ -86,17 +87,17 @@ class GameplayLogic {
 		return this.notes.slice(this.current_index);
 	}
 
-	hitNote(note: Note, char: Character): void {
-		if(!note.canHitChar(char)){
+	hitNote(n: Note, char: Character): void {
+		if(!n.canHitChar(char)){
 			console.error("Tried to hit an invalid character on a note")
 			return;
 		}
-		note.hit_chars.push(char);
-		if(note.isDone()) this.emitter.emit("NOTE_HIT", [note]);
-		if(note.isHold()) this.held_note = (note);
-		if(note.isDone() && !note.isHold()) {
-			this.emitter.emit("NOTE_FINISH", [note]);
-			this.judgeHit(note, this.playback_time);
+		n.hit_chars.push(char);
+		if(n.isDone()) this.emitter.emit("NOTE_HIT", [n]);
+		if(n.isHold()) this.held_note = n;
+		if(n.isDone() && !n.isHold()) {
+			this.emitter.emit("NOTE_FINISH", [n]);
+			this.judgeHit(n.timing.time, this.playback_time);
 		}
 	}
 
@@ -124,7 +125,8 @@ class GameplayLogic {
 	}
 
 	finishPassedHolds(): void {
-		if(this.held_note !== undefined && this.held_note.end_time < this.playback_time + c.HOLD_BUFFER / 4){
+		if(this.held_note !== undefined 
+				&& this.held_note.end_timing.time < this.playback_time + c.HOLD_BUFFER){
 			this.emitter.emit("NOTE_FINISH", [ this.held_note ]);
 			this.held_note = undefined;
 		}
@@ -138,8 +140,8 @@ class GameplayLogic {
 	// SCORING
 	// -----------------------------------------------
 
-	judgeHit(note: Note, cur_time: number){
-		const time_diff = Math.abs(cur_time - note.timing.time);
+	judgeHit(time: number, cur_time: number): void {
+		const time_diff = Math.abs(cur_time - time);
 		const judgment = c.JUDGMENTS.find(j => time_diff < (j.window ?? -1) );
 		u.shouldntBeUndefined(judgment, "While judging a hit, the hit was found to be a miss");
 		this.judgments.push(judgment);
@@ -147,50 +149,19 @@ class GameplayLogic {
 		this.scoreJudgment(judgment);
 	}
 
-	scoreJudgment(judgment: Judgment){
+	scoreJudgment(judgment: Judgment): void {
 		this.score += judgment.points;
 		this.emitter.emit("SCORE_CHANGED", [this.score]);
 	}
 
-	makeMissJudgment(){
+	makeMissJudgment(): void {
 		this.score -= c.MISS_JUDGMENT.points;
 		this.emitter.emit("JUDGMENT_MADE", [c.MISS_JUDGMENT] );
 	}
 }
 
 // Gameplay uses a pre-sorted list to hold notes and keeps track of active notes with a simple range
-class GameplayRenderer extends NoteFieldRenderer<Entity[], number> {
-	constructor(scene: Scene, settings: GameplaySettings["render"], chart: Chart, entities: Entity[], 
-			pt: Point){
-		super(scene, settings, chart, entities, pt);
-	}
-
-	// -----------------------------------------------
-	// NOTEFIELDRENDERER IMPLEMENTATION
-	// -----------------------------------------------
-
-	override initialActiveRange(): Range<number> {
-		return { start: 0, end: 0 }
-	}
-	// Even if the chart has no notes to index, we only index with slice which returns []
-	override get active_entities(): Entity[] {
-		return this.entities.slice(this.active_range.start, this.active_range.end);
-	}
-
-	override entitiesToArray(entities: Entity[]): Entity[] { return entities; }
-
-	override findEntitiesFromIndexWhile(index: number, dir: 'forward' | 'backward', 
-			pred: (e: Entity) => boolean): [Entity[], number] {
-		const ary = (dir === "forward") ? this.entities.slice(index) 
-			: this.entities.slice(0, index).toReversed()
-		const entities = u.takeWhile(ary, pred);
-		return [entities, index + (dir === "backward" ? -1 : 1) * entities.length]
-	}
-
-	// -----------------------------------------------
-	// EVENT HANDLERS
-	// -----------------------------------------------
-
+class GameplayRenderer extends NoteFieldRenderer {
 	onNoteHit(_note: Note): void {
 		this.scene.tweens.add({
 			targets: this.track_container.receptor,

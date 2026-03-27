@@ -10,11 +10,11 @@ export class Precharting extends Scene
         super('Precharting');
     }
 
-    preload () {
+    preload (): void {
 
     }
 
-    create ()
+    create (): void
     {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x000000);
@@ -24,11 +24,11 @@ export class Precharting extends Scene
         this.input.keyboard?.on('keydown', (evt: KeyboardEvent) => this.handleKeyDown(evt));
     }
 
-    update () {
+    update (): void {
 
     }
 
-    async handleKeyDown(evt: KeyboardEvent){
+    async handleKeyDown(evt: KeyboardEvent): Promise<void> {
     	let song: Song | undefined = undefined;
     	if(evt.key === 'o'){
     		song = await this.loadSongFromFileInput();
@@ -40,7 +40,7 @@ export class Precharting extends Scene
 
     loadSongFromFileInput(): Promise<Song> {
     	return OpenFileChooser(this).then(async function(result) {
-    		const file = result.files[0] as File;
+    		const file = result.files[0]!;
 			return await file.text().then( txt => Song.fromJSON(txt));
 		})
     }

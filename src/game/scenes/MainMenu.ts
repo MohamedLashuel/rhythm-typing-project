@@ -11,7 +11,7 @@ export class MainMenu extends Scene
         super('MainMenu');
     }
 
-    create ()
+    create (): void
     {
         this.logo = this.add.image(512, 300, 'logo');
 

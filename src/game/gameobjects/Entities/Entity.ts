@@ -16,6 +16,8 @@ export type PhaserGraphic = GameObjects.GameObject &
 export abstract class Entity {
 	timing: Timing;
 	end_timing?: Timing;
+	abstract key: string;
+
 	// Technically the graphic is undefined until the entity is added to the NoteFieldRenderer
 	// That's the most reasonable overall design I thought of, but it might lead to problems later
 	graphic: PhaserGraphic;
@@ -32,7 +34,7 @@ export abstract class Entity {
 	abstract drawGraphic(scene: Scene, settings: GameplaySettings["render"]): void;
 
 	draw(scene: Scene, settings: GameplaySettings ["render"]): this {
-		if(this.graphic === undefined) {
+		if(this.graphic === undefined) { // eslint-disable-line
 			this.graphic = this.initialGraphic(scene, settings);
 		} else {
 			this.clearGraphic();
@@ -42,11 +44,7 @@ export abstract class Entity {
 		return this;
 	}
 
-	get end_time() {
-		return this.end_timing?.time ?? this.timing.time;
-	}
-
-	get end_pos() {
+	get end_pos(): number {
 		return this.end_timing?.scroll_pos ?? this.timing.scroll_pos;
 	}
 
@@ -58,12 +56,12 @@ export abstract class Entity {
 		return this.graphic.setActive(false).setVisible(false)
 	}
 
-	prepToJSON(): {} {
+	prepToJSON(): object {
 		return this;
 	}
 
-	toJSON() {
-		const to_omit = ["graphic", "timing"]
+	toJSON(): object {
+		const to_omit = ["timing", "graphic"]
 			.concat( (this.end_timing === undefined) ? "end_timing" : []);
 		return u.objectWithout(this.prepToJSON(), to_omit);
 	}

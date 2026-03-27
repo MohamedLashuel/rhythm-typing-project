@@ -20,11 +20,11 @@ export class SongSelect extends Scene
         super('SongSelect');
     }
 
-    preload () {
+    preload (): void {
         this.load.json('songs', 'assets/all_songs.json');
     }
 
-    create ()
+    create (): void
     {
         this.songs = this.cache.json.get('songs').map((json: string) => Song.fromJSON(json));
         this.keyboard = new KeyboardManager(this);
@@ -33,7 +33,7 @@ export class SongSelect extends Scene
         this.makeSongSelect()
     }
 
-    update () {
+    update (): void {
         this.keyboard.handleQueues(e => this.processKeyDownEvent(e))
     }
 

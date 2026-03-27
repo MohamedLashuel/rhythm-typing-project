@@ -5,12 +5,12 @@ import { Character } from '../../helpers/types';
 import { Entity, Timing } from './Entity';
 import { GameplaySettings } from '../types';
 
-
 // Normal notes use text, holds use containers of the text and the hold graphic
 // Jump notes are implemented as a single note with multiple characters
 export class Note extends Entity {
 	chars: Character[];
 	hit_chars: Character[] = [];
+	override key = "note" as const;
 	declare graphic: NoteContainer;
 
 	constructor(chars: Character[], timing: Timing, end_timing?: Timing
@@ -19,7 +19,7 @@ export class Note extends Entity {
 		this.chars = chars;
 	}
 
-	override initialGraphic(scene: Scene, _settings: GameplaySettings["render"]): NoteContainer {
+	override initialGraphic(scene: Scene): NoteContainer {
 		return new NoteContainer(scene);
 	}
 
@@ -31,7 +31,7 @@ export class Note extends Entity {
 		this.graphic.setup(settings, this.chars, this.timing, this.end_timing);
 	}
 
-	isHold(): this is { hold_timing: Timing } {
+	isHold(): this is Note & { end_timing: Timing } {
 		return this.end_timing !== undefined;
 	}
 
@@ -53,7 +53,7 @@ export class Note extends Entity {
 		return u.arraysHaveSameValues(this.chars, this.hit_chars);
 	}
 
-	prepToJSON(): {} {
+	prepToJSON(): object {
 		return u.objectWithout(this, ["hit_chars"] );
 	}
 
@@ -64,12 +64,9 @@ export class Note extends Entity {
 
 class NoteContainer extends GameObjects.Container {
 	num_chars: number;
-	constructor(scene: Scene) {
-		super(scene);
-	}
 
 	setup(settings: GameplaySettings["render"], chars: Character[], 
-			timing: Timing, end_timing?: Timing) {
+			timing: Timing, end_timing?: Timing): void {
 		this.num_chars = chars.length;
 		
 		const y_offsets = this.getYOffsets();

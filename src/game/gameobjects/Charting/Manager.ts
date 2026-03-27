@@ -44,11 +44,11 @@ export class ChartingManager {
 		)
 	}
 
-	processKeyUpEvent(event: KeyboardEvent){ 
+	processKeyUpEvent(event: KeyboardEvent): void { 
 		if(!this.screens.isActive()) this.note_field.processKeyUpEvent(event); 
 	}
 
-	processKeyDownEvent(event: KeyboardEvent){
+	processKeyDownEvent(event: KeyboardEvent): void {
 		if(u.isNum(event.key) && event.ctrlKey) {
 			const screen_type = SCREEN_TYPES[Number(event.key) - 1]
 			if(screen_type !== undefined) this.screens.toggleScreen(screen_type);
@@ -58,7 +58,7 @@ export class ChartingManager {
 			this.note_field.processKeyDownEvent(event); 
 	}
 
-	myUpdate(){ 
+	myUpdate(): void { 
 		this.note_field.myUpdate(this.sound.song_playback_time); 
 		this.keyboard.handleQueues(evt => this.processKeyDownEvent(evt), evt => this.processKeyUpEvent(evt))
 	}

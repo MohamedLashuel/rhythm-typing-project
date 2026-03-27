@@ -36,14 +36,13 @@ export class Beat {
 		if(this.alignedWith(division)) {
 			// Add case
 			const converted_idx = this.index * division / this.division;
-			console.log(converted_idx)
 			const new_idx = converted_idx + (dir === "forward" ? 1 : -1);
 			return Beat.makeBeatHandleOverflow(this.measure, new_idx, division);
 		}
 		else return this.snapNextDivision(division, dir);
 	}
 
-	static beatsToSeconds = (beats: number, bpm: number) => beats / bpm * 60
+	static beatsToSeconds = (beats: number, bpm: number): number => beats / bpm * 60
 
 	// -----------------------------------------------
 	// HELPERS
@@ -51,7 +50,7 @@ export class Beat {
 
 	// Beat A is aligned with division d if (A.index + 1)/A.division = x/d for some integer x
 	// In plain terms, A's decimal value is equivalent to some decimal value in division d
-	alignedWith(division: number) {
+	alignedWith(division: number): boolean {
 		return this.index * division % this.division === 0;
 	}
 
@@ -62,7 +61,7 @@ export class Beat {
 	}
 
 	// Make a beat while checking and fixing if index exceeds division or is < 0
-	static makeBeatHandleOverflow(measure: number, index: number, division: c.ValidDivision){
+	static makeBeatHandleOverflow(measure: number, index: number, division: c.ValidDivision): Beat {
 		const new_idx = (index < 0) ? division + index % division : index % division;
 		const measure_delta = Math.floor(index / division);
 		return new Beat(measure + measure_delta, new_idx, division);
@@ -73,7 +72,7 @@ export class Beat {
 	// -----------------------------------------------
 
 	toJSON(): string {
-		return `${this.measure}/${this.index}/${this.division}`;
+		return `${this.measure.toString()}/${this.index.toString()}/${this.division.toString()}`;
 	}
 
 	static fromJSON(str: string): Beat {

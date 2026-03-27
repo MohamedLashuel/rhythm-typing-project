@@ -52,12 +52,13 @@ export class SelectableSong extends PickableElement<Sizer> {
 		return sizer;
 	}
 
-	hover(){
+	hover(): void {
 		this.text.setStyle( { color: s.colorToString(this.theme.colors.primary) } )
 		this.chart_selector.selectedElement().hover();
 		this.hovered = true;
 	}
-	unhover(){
+
+	unhover(): void {
 		this.text.setStyle( { color: s.colorToString(this.theme.colors.secondary) } )
 		this.chart_selector.unhoverAll();
 		this.hovered = false;
@@ -83,11 +84,11 @@ export class SelectableChart extends PickableElement<GameObjects.Text> {
 			this.theme.text_styles.section_label).setInteractive();
 	}
 
-	hover(){
+	hover(): void {
 		this.game_obj.setColor(s.colorToString(this.theme.colors.primary));
 	}
 
-	unhover(){
+	unhover(): void {
 		this.game_obj.setColor(s.colorToString(this.theme.colors.secondary));
 	}
 }

@@ -1,10 +1,11 @@
 import { Timing } from './Entities/Entity';
 import { Beat } from './Beat';
+import * as u from '../helpers/utils';
 import * as c from '../config';
 import { EntityGroup, entityGroupfromGroupSpec, EntityGroupSpec } from './Entities/EntityGroup';
 import { ScrollZone } from './Entities/ScrollZone';
-import { JSONfied } from '../helpers/types';
-import { BinaryTree, binaryTreeFromJSON, GroupTree, groupTreeFromJSON } from '../helpers/BinaryTree';
+import { GroupTree, groupTreeFromJSON, RBTree, RBTreeFromJSON } from '../helpers/RBTree';
+import { OrderedMapIterator } from 'js-sdsl';
 
 export class Song {
 	constructor(
@@ -19,7 +20,7 @@ export class Song {
 		const obj = JSON.parse(str);
 
 		return new Song(obj.song_name, obj.audio_path, obj.audio_credit, 
-			obj.charts.map( (o: Object) => Chart.fromJSON(JSON.stringify(o))));
+			obj.charts.map( (o: object) => Chart.fromJSON(JSON.stringify(o))));
 	}
 }
 
@@ -35,18 +36,20 @@ export type BpmChange = {
 
 export type EntityMap = GroupTree<Beat, EntityGroup>;
 export type EntityMapEntry = [Beat, Partial<EntityGroup>];
+export type EntityMapIterator = OrderedMapIterator<Beat, Partial<EntityGroup>>;
 export type ScrollEntry = [number, ScrollChange]
 export type BpmEntry = [Beat, BpmChange];
 
-export type EntitySpecMap = GroupTree<Beat, Required<EntityGroupSpec>>
+// Required doesn't affect the type at all (since GroupTree runs Partial again on it) and fixes some TS errors
+export type EntitySpecMap = GroupTree<Beat, Required<EntityGroupSpec>>;
 
 export class Chart {
 	constructor(
 		public author: string = "",
 		public difficulty: number = 0,
 		// Indexed by time
-		public scroll_changes: BinaryTree<number, ScrollChange> = new BinaryTree(undefined),
-		public bpms: BinaryTree<Beat, BpmChange> = new BinaryTree(Beat.compare),
+		public scroll_changes: RBTree<number, ScrollChange> = new RBTree(undefined),
+		public bpms: RBTree<Beat, BpmChange> = new RBTree(Beat.compare),
 		public entity_specs: EntitySpecMap = new GroupTree(Beat.compare),
 		// Offset is used solely to play audio
 		// "Playback time" in other objects does not include offset
@@ -79,19 +82,19 @@ export class Chart {
 	}
 
 	mostRecentScrollEntryFrom(time: number): ScrollEntry {
-		return this.scroll_changes.getPairOrNextLower(time) ?? Chart.defaultScrollEntry
+		return this.scroll_changes.floor(time) ?? Chart.defaultScrollEntry
 	}
 
 	mostRecentBPMEntryFrom(beat: Beat): BpmEntry {
-		return this.bpms.getPairOrNextLower(beat) ?? this.defaultBPMEntry()
+		return this.bpms.floor(beat) ?? this.defaultBPMEntry()
 	}
 
 	// Assumes entry is the most recent change before time
-	scrollPositionUsingScrollEntry(time: number, entry: ScrollEntry){
+	scrollPositionUsingScrollEntry(time: number, entry: ScrollEntry): number {
 		return entry[1].total_distance + (time - entry[0]) * entry[1].mult;
 	}
 	// Ditto for this one
-	hitTimeUsingBPMEntry(beat: Beat, entry: BpmEntry){
+	hitTimeUsingBPMEntry(beat: Beat, entry: BpmEntry): number {
 		return entry[1].total_time 
 			+ Beat.beatsToSeconds(beat.toDecimal() - entry[0].toDecimal(), entry[1].bpm);
 	}
@@ -100,23 +103,24 @@ export class Chart {
 	// CHANGING TIMINGS
 	// -----------------------------------------------
 
-	addBpmChange(beat: Beat, bpm: number) {
+	addBpmChange(beat: Beat, bpm: number): void {
 		this.bpms.set(beat, { total_time: this.calculateHitTime(beat), bpm: bpm });
 		this.recalculateBpmEntries(beat);
 	}
 
-	removeBpmChange(beat: Beat) {
+	removeBpmChange(beat: Beat): void {
 		this.bpms.delete(beat);
 		this.recalculateBpmEntries(beat);
 	}
 
-	addScrollZone(zone: ScrollZone) {
+	addScrollZone(zone: ScrollZone): void {
 		const previous_entry = this.mostRecentScrollEntryFrom(zone.timing.time);
 		this.scroll_changes.set(zone.timing.time, 
 			{ mult: zone.mult, total_distance: this.calculateScrollPosition(zone.timing.time) }
 		);
-		this.scroll_changes.set(zone.end_time, 
-			{ mult: previous_entry[1].mult, total_distance: this.calculateScrollPosition(zone.end_time) }
+		this.scroll_changes.set(zone.end_timing.time, 
+			{ mult: previous_entry[1].mult, 
+				total_distance: this.calculateScrollPosition(zone.end_timing.time) }
 		);
 		this.recalculateScrollEntries(zone.end_timing.beat);
 	}
@@ -125,10 +129,15 @@ export class Chart {
 	// from_beat is where the change happened. I should only be processing notes after from_beat to make
 	// this faster, but I can figure it out later if I need to. (Same for the other recalculate functions)
 	recalculateEntityTimings(entity_map: EntityMap, _from_beat: Beat): void {
-		entity_map.forEachProp((v, b) => {
-			v.timing = this.calculateBeatTiming(b);
-			if(v.end_timing !== undefined) v.end_timing = this.calculateBeatTiming(v.end_timing.beat); 
-		});
+		entity_map.forEachProp(ent => {
+			if(ent.end_timing !== undefined) ent.end_timing = this.calculateBeatTiming(ent.end_timing.beat); 
+		})
+		entity_map.forEach( ([beat, group]) => {
+			const new_timing = this.calculateBeatTiming(beat);
+			u.objectForEach(group, v => {
+				if(v !== undefined) v.timing = new_timing;
+			})
+		})
 	}
 
 	recalculateBpmEntries(_beat: Beat): void {
@@ -144,45 +153,39 @@ export class Chart {
 	// -----------------------------------------------
 
 	createEntityMap(): EntityMap {
-		return this.entity_specs.map( (es, beat) => this.reviveEntitySpec(es, beat));
+		return this.entity_specs.mapGroups( (es, beat) => this.reviveEntitySpec(es, beat));
 	}
 
 	reviveEntitySpec(gs: EntityGroupSpec, beat: Beat): EntityGroup {
-		return entityGroupfromGroupSpec(gs, this, beat);
+		const timing = this.calculateBeatTiming(beat);
+		return entityGroupfromGroupSpec(gs, timing, this);
 	}
 
 	// -----------------------------------------------
 	// JSON
 	// -----------------------------------------------
-
-	toJSON(): JSONfied<Chart> {
-		return {
-			author: this.author,
-			difficulty: this.difficulty,
-			scroll_changes: this.scroll_changes.toArray(),
-			bpms: this.bpms.toArray(),
-			entity_specs: this.entity_specs.toArray(),
-			offset: this.offset,
-			initial_bpm: this.initial_bpm
-		}
-	}
-
 	static fromJSON(str: string): Chart {
 		const obj = JSON.parse(str, Chart.jsonReviver);
 		
-		const chart = new Chart(obj.author, obj.difficulty, obj.scroll_changes, obj.bpms, obj.entity_specs,
-			obj.offset, obj.initial_bpm);
+		const chart = new Chart(
+			obj.author, 
+			obj.difficulty, 
+			obj.scroll_changes, 
+			obj.bpms, 
+			obj.entity_specs,
+			obj.offset, 
+			obj.initial_bpm);
 
 		return chart;
 	}
 
-	static jsonReviver(k: string, v: any){
+	static jsonReviver(k: string, v: any): any {
 		if(k === "scroll_changes"){
-			return binaryTreeFromJSON<number, ScrollChange>(undefined, v)
+			return RBTreeFromJSON<number, ScrollChange>(undefined, v)
 		} else if (k === "bpms") {
-			return binaryTreeFromJSON(Beat.compare, v, (b) => Beat.fromJSON(b))
+			return RBTreeFromJSON(Beat.compare, v, { key: (b) => Beat.fromJSON(b) } )
 		} else if (k === "entity_specs"){
-			return groupTreeFromJSON(Beat.compare, v, (b) => Beat.fromJSON(b));
+			return groupTreeFromJSON(Beat.compare, v, { key: (b) => Beat.fromJSON(b) });
 		} else {
 			return v;
 		}

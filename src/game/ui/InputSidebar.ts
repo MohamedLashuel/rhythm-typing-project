@@ -9,7 +9,7 @@ import { UITextStyle, UITheme } from "./types";
 
 type ValueTypeOfInputElement<T> = T extends InputElement<infer _T, infer V> ? V : never;
 
-export type SidebarSpec = Record<string, Record<string, InputElement<any,any>>>
+export type SidebarSpec = Record<string, Record<string, InputElement<GameObjects.GameObject, unknown>>>
 
 export class InputSidebar<T extends SidebarSpec> {
 	panel: ScrollablePanel;
@@ -65,7 +65,7 @@ export class InputSidebar<T extends SidebarSpec> {
 				right: 5
 			}
 		})
-		u.objectForEach(sections, (obj => obj.setDepth?.(depth)));
+		u.objectForEach(sections, (obj => obj.setDepth(depth)));
 		return sizer;
 	}
 
@@ -84,7 +84,8 @@ export class InputSidebar<T extends SidebarSpec> {
 		return new GameObjects.Text(this.scene, 0, 0, txt, style);
 	}
 
-	makeSection(label: string, game_objs: Record<string, InputElement<any, any>>): Sizer {
+	makeSection(label: string, game_objs: Record<string, InputElement<GameObjects.GameObject, unknown>>)
+			: Sizer {
 		const labelled_objs = u.mapObject(game_objs, (ie, label) => {
 			return this.labelled(label, ie.game_obj, "element_label")
 		});

@@ -127,7 +127,7 @@ export class Circle extends Phaser.GameObjects.Arc {
 }
 
 // Move this to UI once we refactor the charting screens
-export function chartingScreenTextInput(scene: Scene, pt: Point, header: string) {
+export function chartingScreenTextInput(scene: Scene, pt: Point, header: string): TextAreaInput {
     return new TextAreaInput(scene, {
         x: pt.x,
         y: pt.y,

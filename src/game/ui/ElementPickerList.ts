@@ -1,4 +1,4 @@
-import { Scene } from "phaser";
+import { GameObjects, Scene } from "phaser";
 import * as u from '../helpers/utils';
 import * as s from './shared';
 import { PickableElement } from "./PickableElement";
@@ -6,7 +6,7 @@ import ScrollablePanel from "phaser3-rex-plugins/templates/ui/scrollablepanel/Sc
 import { NonEmptyArray } from "../helpers/types";
 import { UITheme } from "./types";
 
-export class ElementPickerList<T extends PickableElement<any>> {
+export class ElementPickerList<T extends PickableElement<GameObjects.GameObject>> {
 	cursor: number;
 	elements: NonEmptyArray<T>;
 	panel: ScrollablePanel;
@@ -30,11 +30,11 @@ export class ElementPickerList<T extends PickableElement<any>> {
 
 		this.cursor = 0;
 		this.elements.forEach(e => e.unhover());
-		this.elements[0]?.hover();
+		this.elements[0].hover();
 	}
 
 	// When pointer events happen to an element, the list has to be involved
-	attachPointerEventListeners(elements: T[]) {
+	attachPointerEventListeners(elements: T[]): void {
 		elements.forEach( (e, i) => {
 			// When an element is clicked, set the cursor to that element
 			e.game_obj.on('pointerdown', () => {
