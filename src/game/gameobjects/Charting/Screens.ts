@@ -4,17 +4,19 @@ import * as g from '../../graphics';
 import * as u from '../../helpers/utils';
 import TextAreaInput from "phaser3-rex-plugins/templates/ui/textareainput/TextAreaInput";
 import DropDownList from "phaser3-rex-plugins/templates/ui/dropdownlist/DropDownList";
+import { MyEmitter } from "../../phaser-wrappers/MyEmitter";
+import { ScreensEvents } from "../types";
 
 // Updating this variable automatically updates keyboard shortcuts
 export const SCREEN_TYPES = ["shortcuts", "chart_props", "song_props", "chart_list"] as const;
-export type ScreenType = typeof SCREEN_TYPES[number];
+type ScreenType = typeof SCREEN_TYPES[number];
 
 export class ScreenManager {
 	screens: Record<ScreenType, Screen>;
 	active_screen?: ScreenType = undefined;
 	song: Song;
 	chart_index: number;
-	emitter: u.MyEmitter = new u.MyEmitter();
+	emitter: MyEmitter<ScreensEvents> = new MyEmitter();
 
 	constructor(scene: Scene, song: Song, chart_index: number) {
 		this.screens = {
@@ -101,8 +103,9 @@ class ChartProps extends Screen {
 	}
 
 	override saveChanges(mgr: ScreenManager): void {
-		mgr.chart.offset = Number(this.offset_input.text)
-		mgr.chart.initial_bpm = Number(this.bpm_input.text)
+		mgr.chart.offset = Number(this.offset_input.text);
+		mgr.chart.initial_bpm = Number(this.bpm_input.text);
+    	mgr.emitter.emit("OFFSET_CHANGED", [Number(this.offset_input.text)] );
 	}
 }
 
@@ -114,8 +117,8 @@ class SongProps extends Screen {
 	constructor(scene: Scene) {
 		super(scene);
 		this.song_name_input = g.chartingScreenTextInput(scene, {x: 400, y: 200}, "Song Name");
-        this.audio_path_input = g.chartingScreenTextInput(scene, {x: 400, y: 400}, "Audio Path");
-        this.audio_credit_input = g.chartingScreenTextInput(scene, {x: 400, y: 600}, "Audio Credit");
+    this.audio_path_input = g.chartingScreenTextInput(scene, {x: 400, y: 400}, "Audio Path");
+    this.audio_credit_input = g.chartingScreenTextInput(scene, {x: 400, y: 600}, "Audio Credit");
 
 		this.add([
 			this.song_name_input,

@@ -2,7 +2,7 @@ import { Scene } from 'phaser';
 import { Song } from '../gameobjects/Song';
 import { ElementPickerList } from '../ui/ElementPickerList';
 import { SelectableSong } from '../ui/PickableElement';
-import { KeyboardManager } from '../gameobjects/KeyboardManager';
+import { KeyboardManager } from '../phaser-wrappers/KeyboardManager';
 import * as u from '../helpers/utils';
 import * as g from '../graphics';
 import { SettingsTab } from '../gameobjects/SettingsSidebar';

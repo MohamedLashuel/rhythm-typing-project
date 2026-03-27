@@ -30,7 +30,8 @@ export default defineConfig(
       "@typescript-eslint/prefer-includes": "error",
       "@typescript-eslint/prefer-nullish-coalescing": "error",
       "@typescript-eslint/prefer-return-this-type": "error",
-      "@typescript-eslint/require-array-sort-compare": "error"
+      "@typescript-eslint/require-array-sort-compare": "error",
+      "@typescript-eslint/strict-boolean-expressions": "error"
   	},
     languageOptions: {
       parserOptions: {

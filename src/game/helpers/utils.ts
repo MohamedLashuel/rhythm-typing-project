@@ -1,5 +1,4 @@
 import * as t from "./types"
-import { Event, EventTable, Listener } from "../gameobjects/types";
 
 export function isChar(str: string): str is t.Character { 
 	return /^[A-z]$/.test(str);
@@ -51,10 +50,6 @@ export function isObjectEmpty(obj: object): boolean {
 	return true;
 }
 
-export function flatProperties<T>(ary: { [s: string]: T}[]): T[] {
-	return ary.map(o => Object.values(o)).flat();
-}
-
 export function countStrings(ary: string[]): Record<string, number> {
 	const obj: Record<string, number> = {};
 	ary.forEach( s => (obj[s] === undefined) ? (obj[s] = 1) : obj[s]++)
@@ -103,11 +98,6 @@ export function gcd(x: integer, y: integer): integer {
 
 	return divisors(lower).filter(d => !(higher % d) ).reduce( (x, y) => x * y, 1);
 }
-// Determines if a note is a 4th, 8th, 16th etc. note
-// Ex: the second note out of 16 is an 8th note
-export function noteDivision(i: number, len: number): number {
-	return len / gcd(i, len);
-}
 
 // Used in cases where TypeScript thinks a value could be undefined, but we're reasonably sure it's not
 // Checks and logs an error if it is undefined, then allows us to use the value as if it's not
@@ -125,7 +115,7 @@ export function map2<T, V, R>(a1: T[], a2: V[], fun: (arg0: T, arg1: V) => R): R
 	return results;
 }
 
-export function arraysHaveSameValues(a1: unknown[], a2: unknown[]): boolean {
+export function arraysHaveSameValues(a1: string[], a2: string[]): boolean {
 	if(a1.length !== a2.length) return false;
 	return map2(a1.toSorted(), a2.toSorted(), (x, y) => x === y).every(v => v);
 }
@@ -166,19 +156,6 @@ export function safely<R>(callback: () => R): R | undefined {
 		return callback();
 	} catch {
 		return undefined;
-	}
-}
-
-// Emits Phaser events with automatic type checking
-export class MyEmitter {
-	private readonly event_emitter: Phaser.Events.EventEmitter = new Phaser.Events.EventEmitter();
-
-	emit<E extends Event>(code: E, args: EventTable[E]): void {
-		this.event_emitter.emit(code, ...args);
-	}
-
-	addListeners(...listeners: Listener[]): void {
-		listeners.forEach( (l) => this.event_emitter.on(l.event, l.fun, l.context));
 	}
 }
 

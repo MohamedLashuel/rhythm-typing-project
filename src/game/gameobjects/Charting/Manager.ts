@@ -1,11 +1,11 @@
 import { ChartingNoteField } from "./NoteField";
-import { SoundManager } from "../Sound";
+import { SoundManager } from "../../phaser-wrappers/Sound";
 import * as u from '../../helpers/utils';
 import * as c from '../../config';
 import { Scene } from "phaser";
 import { SCREEN_TYPES, ScreenManager } from "./Screens";
 import { Song } from "../Song";
-import { KeyboardManager } from "../KeyboardManager";
+import { KeyboardManager } from "../../phaser-wrappers/KeyboardManager";
 import { SettingsTab } from "../SettingsSidebar";
 import { Point } from "../../helpers/types";
 

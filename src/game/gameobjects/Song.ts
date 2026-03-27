@@ -5,7 +5,6 @@ import * as c from '../config';
 import { EntityGroup, entityGroupfromGroupSpec, EntityGroupSpec } from './Entities/EntityGroup';
 import { ScrollZone } from './Entities/ScrollZone';
 import { GroupTree, groupTreeFromJSON, RBTree, RBTreeFromJSON } from '../helpers/RBTree';
-import { OrderedMapIterator } from 'js-sdsl';
 
 export class Song {
 	constructor(
@@ -35,8 +34,6 @@ export type BpmChange = {
 }
 
 export type EntityMap = GroupTree<Beat, EntityGroup>;
-export type EntityMapEntry = [Beat, Partial<EntityGroup>];
-export type EntityMapIterator = OrderedMapIterator<Beat, Partial<EntityGroup>>;
 export type ScrollEntry = [number, ScrollChange]
 export type BpmEntry = [Beat, BpmChange];
 

@@ -3,8 +3,9 @@ import { NumberSlider } from '../ui/InputElement';
 import { InputSidebar, SidebarSpec } from '../ui/InputSidebar';
 import * as u from '../helpers/utils';
 import { Scene } from "phaser";
-import { GameplaySettings } from './types';
+import { GameplaySettings, SettingsEvents } from './types';
 import { Layer2Keys, RemapLeaves } from '../helpers/types';
+import { MyEmitter } from '../phaser-wrappers/MyEmitter';
 
 const sidebar_width = g.SETTINGS_WIDTH_PCT;
 const elem_width = sidebar_width - 5;
@@ -24,7 +25,7 @@ const settings_sidebar_spec = {
 export class SettingsTab {
 	sidebar: InputSidebar<typeof settings_sidebar_spec>;
 	active: boolean;
-	emitter: u.MyEmitter = new u.MyEmitter();
+	emitter: MyEmitter<SettingsEvents> = new MyEmitter();
 
 	constructor(scene: Scene) {
 		const spec = settings_sidebar_spec;

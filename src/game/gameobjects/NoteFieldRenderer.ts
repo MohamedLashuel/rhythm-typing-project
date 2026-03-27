@@ -9,7 +9,7 @@ import { Point, Range } from "../helpers/types";
 import { EntityGroup, UsedEntity } from "./Entities/EntityGroup";
 import { GroupTree, RBIterator } from "../helpers/RBTree";
 
-export type UpdateDirection = "forward" | "backward" | "expand" | "contract";
+type UpdateDirection = "forward" | "backward" | "expand" | "contract";
 
 // Undefined used if there are no entities to iterate through
 type EntityRange = { left: REC_Itr, right: REC_Itr } | undefined
@@ -71,7 +71,6 @@ export abstract class NoteFieldRenderer extends GameObjects.Container {
 		if(this.active_range !== undefined){
 			const new_range: { left: REC_Itr | undefined, right: REC_Itr | undefined } = this.active_range;
 			// Check if either iterator is both pointing to the entity and the whole group will be deleted
-			console.log(this.active_range.left.value)
 			if(u.objectsEqual(this.active_range.left.value, { [entity.key]: entity } )){
 				new_range.left = this.active_range.left.prev()
 			}
@@ -192,6 +191,10 @@ class RendererEntityContainer {
 		tree.forEachProp((ent, _timing, prop) => this.end_tree.setProp(ent.end_pos, prop, ent));
 	}
 
+	// -----------------------------------------------
+	// MAIN FUNCTIONALITY
+	// -----------------------------------------------
+
 	addEntity(entity: UsedEntity): void {
 		this.start_tree.setProp(entity.timing.scroll_pos, entity.key, entity);
 		this.end_tree.setProp(entity.timing.scroll_pos, entity.key, entity);
@@ -200,6 +203,10 @@ class RendererEntityContainer {
 	deleteEntity(entity: UsedEntity): void {
 		this.start_tree.deleteProp(entity.timing.scroll_pos, entity.key);
 		this.end_tree.deleteProp(entity.timing.scroll_pos, entity.key);
+	}
+
+	forEachProp(fun: (e: Entity, k: number, p: keyof EntityGroup) => void): void {
+		this.start_tree.forEachProp(fun);
 	}
 
 	initialIterators(): EntityRange {
@@ -251,6 +258,10 @@ class RendererEntityContainer {
 		}
 	}
 
+	// -----------------------------------------------
+	// HELPERS
+	// -----------------------------------------------
+
 	advanceIterator(itr: REC_Itr, dir: "forward" | "backward", 
 			toggle: "activate" | "deactivate", pos: number): REC_Itr {
 		const [to_toggle, new_itr] = this.entitiesUntilKey(itr, pos, dir)
@@ -259,21 +270,13 @@ class RendererEntityContainer {
 		return new_itr;
 	}
 
-	forEachProp(fun: (e: Entity, k: number, p: keyof EntityGroup) => void): void {
-		this.start_tree.forEachProp(fun);
-	}
-
 	// Returns entries and new iterator
 	entitiesUntilKey(itr: REC_Itr, key: number, dir: "forward" | "backward" = "forward")
 			: [Entity[], REC_Itr] {
 		const sofar = [];
 
-		const cond = (dir === "forward")
-			? (itr: REC_Itr) => itr.key <= key 
-			: (itr: REC_Itr) => itr.key >= key
-		const op = (dir === "forward")
-			? (itr: REC_Itr) => itr.next() 
-			: (itr: REC_Itr) => itr.prev()
+		const cond = (dir === "forward") ? (itr: REC_Itr) => itr.key <= key : (itr: REC_Itr) => itr.key >= key
+		const op = (dir === "forward") ? (itr: REC_Itr) => itr.next() : (itr: REC_Itr) => itr.prev()
 			
 		while(cond(itr)){
 			sofar.push(itr.value);

@@ -1,7 +1,7 @@
 import { GameplayNoteField } from "./NoteField";
 import { ScoreRenderer } from "./ScoreRenderer";
-import { SoundManager } from "../Sound";
-import { KeyboardManager } from "../KeyboardManager"
+import { SoundManager } from "../../phaser-wrappers/Sound";
+import { KeyboardManager } from "../../phaser-wrappers/KeyboardManager"
 import { Chart } from "../Song";
 import { Scene } from "phaser";
 import { GameplaySettings } from "../types";

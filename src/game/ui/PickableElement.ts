@@ -70,7 +70,7 @@ export class SelectableSong extends PickableElement<Sizer> {
 	}
 }
 
-export class SelectableChart extends PickableElement<GameObjects.Text> {
+class SelectableChart extends PickableElement<GameObjects.Text> {
 	chart: Chart;
 
 	constructor(scene: Scene, theme: UITheme, chart: Chart){

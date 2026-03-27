@@ -4,10 +4,11 @@ import * as c from '../../config'
 import { Timing } from '../Entities/Entity';
 import { Chart, EntityMap } from "../Song"
 import { NoteFieldRenderer } from '../NoteFieldRenderer';
-import { KeyboardManager } from '../KeyboardManager';
+import { KeyboardManager } from '../../phaser-wrappers/KeyboardManager';
 import { Note } from '../Entities/Note';
 import { Character, Point } from '../../helpers/types';
-import { GameplaySettings, Judgment } from '../types';
+import { GameplayEvents, GameplaySettings, Judgment } from '../types';
+import { MyEmitter } from '../../phaser-wrappers/MyEmitter';
 
 export class GameplayNoteField {
 	logic: GameplayLogic;
@@ -44,7 +45,7 @@ class GameplayLogic {
 	playback_time: number = 0;
 	// Notes before this index can't be hit. Used to cut down on processing
 	current_index: number = 0;
-	emitter: u.MyEmitter = new u.MyEmitter();
+	emitter: MyEmitter<GameplayEvents> = new MyEmitter();
 	score: number = 0;
 	judgments: Judgment[] = [];
 

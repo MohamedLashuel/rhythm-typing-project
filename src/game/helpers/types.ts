@@ -15,20 +15,8 @@ export type Range<T> = {
 
 export type NonEmptyArray<T> = [T, ...T[]];
 
-export type AtLeastOne<T, U = {[K in keyof T]: Pick<T, K> }> = Partial<T> & U[keyof U]
-
-
 export type Comparator<T> = (a: T, b: T) => number;
 export type ComparatorIfNecessary<T> = T extends string | number ? Comparator<T> | undefined : Comparator<T>
-
-// Specifically excludes class properties which are functions, only includes real methods
-type ClassMethod = (...args: any[]) => any;
-
-export type ClassProperties<C> = keyof {
-    [K in keyof C as C[K] extends ClassMethod ? never : K]: any
-}
-
-export type JSONfied<C> = Record<ClassProperties<C>, any>
 
 export type RemapLeaves<Base, To> = {
 	[Property in keyof Base]: Base[Property] extends Record<string, unknown> 

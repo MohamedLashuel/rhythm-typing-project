@@ -20,7 +20,7 @@ export type ChartingActionWithData<E, U = E> = {
 	redo_data: E
 }
 
-export type ReversibleChartingAction<E, U = E> = ChartingAction<E, U> 
+type ReversibleChartingAction<E, U = E> = ChartingAction<E, U> 
 	& {undo: (nf: ChartingNoteField, data: U) => E}
 
 function reverseAction<E, U>(action: ReversibleChartingAction<E, U>)

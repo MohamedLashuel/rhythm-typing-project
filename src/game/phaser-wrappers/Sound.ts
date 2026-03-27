@@ -1,5 +1,5 @@
 import { Scene } from "phaser";
-import { GameplaySettings, SoundInstance } from "./types";
+import { GameplaySettings, SoundInstance } from "../gameobjects/types";
 
 // Audio is preloaded in the scene itself with key "song" (or might not be loaded, which is also ok)
 export class SoundManager {
